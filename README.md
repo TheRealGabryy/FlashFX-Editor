@@ -410,6 +410,8 @@ Special thanks to:
 
 ---
 
-**Made with passion for motion design**
+**Made with passion by Gabriele Bolognese**
 
 For more information, visit the documentation or reach out to the development team.
+
+If you really read a 420 lines README u have aura
