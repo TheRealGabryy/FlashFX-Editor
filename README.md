@@ -1,6 +1,6 @@
 # FlashFX
 
-<img src="docs/assets/Screenshot 2026-01-03 183356.png" width="600">
+<img src="docs/assets/Screenshot 2026-01-03 183356.png" width="1000">
 
 A professional motion graphics and animation design tool built with React, TypeScript, and Supabase. Create stunning animations with an intuitive interface, powerful timeline controls, and advanced visual effects.
 
@@ -55,6 +55,8 @@ FlashFX is a web-based motion design application that combines the power of a ve
 - **Copy/Paste** - Full clipboard support for elements
 - **Undo/Redo** - Unlimited history with Ctrl+Z/Ctrl+Y
 - **Context Menus** - Right-click menus for quick actions
+
+  <img src="docs/assets/Screenshot 2025-11-30 054946.png" width="1000">
 
 ## Technology Stack
 
@@ -126,6 +128,8 @@ flashfx/
 - Node.js 18 or higher
 - npm or yarn package manager
 - Supabase account (for cloud features)
+
+  <img src="docs/assets/Screenshot 2025-11-30 080303.png" width="1000">
 
 ### Installation
 
