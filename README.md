@@ -1,6 +1,6 @@
 # FlashFX
 
-![Preview](docs/assetsScreenshot 2026-01-03 183356.png)
+<img src="docs/assets/Screenshot 2026-01-03 183356.png" width="600">
 
 A professional motion graphics and animation design tool built with React, TypeScript, and Supabase. Create stunning animations with an intuitive interface, powerful timeline controls, and advanced visual effects.
 
