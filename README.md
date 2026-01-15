@@ -188,6 +188,7 @@ FlashFX uses Supabase for data persistence. The database schema includes:
 ### Migrations
 Database migrations are located in `supabase/migrations/`. Apply them using the Supabase CLI or directly in your Supabase dashboard.
 
+<img src="docs/assets/Screenshot 2026-01-06 104920.png" width="1000">
 ## Usage Guide
 
 ### Creating Your First Project
@@ -396,6 +397,7 @@ Additional documentation available:
 - `KEYBOARD_SHORTCUTS_IMPLEMENTATION.md` - Complete shortcuts list
 - `INTEGRATION_GUIDE.md` - API and integration guide
 
+<img src="docs/assets/chat2.png" width="1000">
 ## Version History
 
 **Alpha Release**
