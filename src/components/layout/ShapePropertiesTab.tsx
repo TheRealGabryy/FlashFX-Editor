@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { Copy, Clipboard, Palette, Plus, Trash2, GripVertical, Sparkles, Square } from 'lucide-react';
+import React from 'react';
+import { Copy, Clipboard, Plus, Trash2, Sparkles } from 'lucide-react';
 import { DesignElement } from '../../types/design';
 import { useClipboard } from '../../hooks/useClipboard';
 import ShapeMaterialPanel from './ShapeMaterialPanel';
@@ -20,7 +20,6 @@ const ShapePropertiesTab: React.FC<ShapePropertiesTabProps> = ({
   canvasSize = { width: 3840, height: 2160 }
 }) => {
   const { copyStyle, pasteStyle, copyValue, pasteValue, copiedStyle } = useClipboard();
-  const [isAdvancedMaterial, setIsAdvancedMaterial] = useState(false);
 
   const animation = useAnimation();
   const currentTime = animation.state.timeline.currentTime;
@@ -476,139 +475,68 @@ const ShapePropertiesTab: React.FC<ShapePropertiesTabProps> = ({
         </div>
       </div>
 
-      {/* Material Subtabs - Hide for SVG and Adjustment Layer */}
+      {/* Material Panel - Hide for SVG and Adjustment Layer */}
       {selectedElement.type !== 'svg' && selectedElement.type !== 'adjustment-layer' && (
-        <div className="space-y-1.5">
-          {/* Material Mode - One-way conversion */}
-          {!isAdvancedMaterial ? (
-            <button
-              onClick={() => setIsAdvancedMaterial(true)}
-              className="w-full flex items-center justify-center space-x-1 px-3 py-2 bg-gradient-to-r from-cyan-500/20 to-blue-500/20 hover:from-cyan-500/30 hover:to-blue-500/30 border border-cyan-500/30 rounded font-medium transition-all duration-200 text-xs text-cyan-400"
-            >
-              <Sparkles className="w-3 h-3" />
-              <span>Convert to Advanced Shape</span>
-            </button>
-          ) : (
-            <div className="flex items-center justify-center space-x-1 px-2 py-1.5 bg-cyan-400/20 border border-cyan-400/50 rounded text-xs">
-              <Sparkles className="w-3 h-3 text-cyan-400" />
-              <span className="text-cyan-400 font-medium">Advanced Material Mode</span>
+        <div className="space-y-2">
+          <ShapeMaterialPanel
+            selectedElements={selectedElements}
+            updateElement={updateElement}
+          />
+
+          {/* Stroke & Border */}
+          <div className="space-y-1.5">
+            <h4 className="text-xs font-medium text-gray-300 flex items-center">
+              <span className="w-1 h-1 bg-green-400 rounded-full mr-1.5"></span>
+              Stroke & Border
+            </h4>
+
+            <div>
+              <label className="text-xs text-gray-400 block mb-0.5">Stroke Width</label>
+              <input
+                type="number"
+                min="0"
+                value={roundedElement.strokeWidth}
+                onChange={(e) => handleUpdate({ strokeWidth: Math.round(Number(e.target.value)) })}
+                className="w-full px-1.5 py-0.5 bg-gray-700/50 border border-gray-600/50 rounded text-xs text-white focus:outline-none focus:border-yellow-400/50"
+              />
             </div>
-          )}
 
-          {/* Material Content */}
-          {!isAdvancedMaterial ? (
-            <div className="space-y-3">
-              {/* Fill Color */}
-              <div className="space-y-1.5">
-                <div className="flex items-center justify-between">
-                  <h4 className="text-xs font-medium text-gray-300 flex items-center">
-                    <span className="w-1 h-1 bg-cyan-400 rounded-full mr-1.5"></span>
-                    Fill Color
-                  </h4>
-                  <KeyframeButton
-                    onClick={() => handleAddKeyframe('fill', safeSelectedElement.fill || '#3B82F6')}
-                    isActive={hasKeyframeAtCurrentTime('fill')}
-                    title="Add keyframe for fill color"
-                  />
-                </div>
-                <div>
-                  <div className="flex items-center space-x-1.5">
-                    <input
-                      type="color"
-                      value={safeSelectedElement.fill || '#3B82F6'}
-                      onChange={(e) => handleUpdate({ fill: e.target.value })}
-                      className="w-6 h-6 rounded cursor-pointer border border-gray-600/50"
-                    />
-                    <input
-                      type="text"
-                      value={safeSelectedElement.fill || '#3B82F6'}
-                      onChange={(e) => handleUpdate({ fill: e.target.value })}
-                      className="flex-1 px-1.5 py-0.5 bg-gray-700/50 border border-gray-600/50 rounded text-xs text-white focus:outline-none focus:border-cyan-400/50"
-                    />
-                  </div>
-                </div>
+            <div>
+              <label className="text-xs text-gray-400 block mb-0.5">Border Radius</label>
+              <input
+                type="number"
+                min="0"
+                value={roundedElement.borderRadius}
+                onChange={(e) => handleUpdate({ borderRadius: Math.round(Number(e.target.value)) })}
+                className="w-full px-1.5 py-0.5 bg-gray-700/50 border border-gray-600/50 rounded text-xs text-white focus:outline-none focus:border-yellow-400/50"
+              />
+            </div>
+
+            <div>
+              <div className="flex items-center justify-between mb-0.5">
+                <label className="text-xs text-gray-400">Opacity</label>
+                <KeyframeButton
+                  onClick={() => handleAddKeyframe('opacity', safeSelectedElement.opacity)}
+                  isActive={hasKeyframeAtCurrentTime('opacity')}
+                  title="Add keyframe for opacity"
+                />
               </div>
-
-              {/* Stroke & Border */}
-              <div className="space-y-1.5">
-                <h4 className="text-xs font-medium text-gray-300 flex items-center">
-                  <span className="w-1 h-1 bg-green-400 rounded-full mr-1.5"></span>
-                  Stroke & Border
-                </h4>
-
-                <div>
-                  <label className="text-xs text-gray-400 block mb-0.5">Stroke Color</label>
-                  <div className="flex items-center space-x-1.5">
-                    <input
-                      type="color"
-                      value={safeSelectedElement.stroke}
-                      onChange={(e) => handleUpdate({ stroke: e.target.value })}
-                      className="w-6 h-6 rounded cursor-pointer border border-gray-600/50"
-                    />
-                    <input
-                      type="text"
-                      value={safeSelectedElement.stroke}
-                      onChange={(e) => handleUpdate({ stroke: e.target.value })}
-                      className="flex-1 px-1.5 py-0.5 bg-gray-700/50 border border-gray-600/50 rounded text-xs text-white focus:outline-none focus:border-green-400/50"
-                    />
-                  </div>
-                </div>
-
-                <div>
-                  <label className="text-xs text-gray-400 block mb-0.5">Stroke Width</label>
-                  <input
-                    type="number"
-                    min="0"
-                    value={roundedElement.strokeWidth}
-                    onChange={(e) => handleUpdate({ strokeWidth: Math.round(Number(e.target.value)) })}
-                    className="w-full px-1.5 py-0.5 bg-gray-700/50 border border-gray-600/50 rounded text-xs text-white focus:outline-none focus:border-yellow-400/50"
-                  />
-                </div>
-
-                <div>
-                  <label className="text-xs text-gray-400 block mb-0.5">Border Radius</label>
-                  <input
-                    type="number"
-                    min="0"
-                    value={roundedElement.borderRadius}
-                    onChange={(e) => handleUpdate({ borderRadius: Math.round(Number(e.target.value)) })}
-                    className="w-full px-1.5 py-0.5 bg-gray-700/50 border border-gray-600/50 rounded text-xs text-white focus:outline-none focus:border-yellow-400/50"
-                  />
-                </div>
-
-                <div>
-                  <div className="flex items-center justify-between mb-0.5">
-                    <label className="text-xs text-gray-400">Opacity</label>
-                    <KeyframeButton
-                      onClick={() => handleAddKeyframe('opacity', safeSelectedElement.opacity)}
-                      isActive={hasKeyframeAtCurrentTime('opacity')}
-                      title="Add keyframe for opacity"
-                    />
-                  </div>
-                  <div className="space-y-0.5">
-                    <input
-                      type="range"
-                      min="0"
-                      max="1"
-                      step="0.1"
-                      value={safeSelectedElement.opacity}
-                      onChange={(e) => handleUpdate({ opacity: Number(e.target.value) })}
-                      className="w-full h-1 bg-gray-700 rounded-lg appearance-none cursor-pointer slider"
-                    />
-                    <div className="text-xs text-gray-400 text-center">
-                      {Math.round(safeSelectedElement.opacity * 100)}%
-                    </div>
-                  </div>
+              <div className="space-y-0.5">
+                <input
+                  type="range"
+                  min="0"
+                  max="1"
+                  step="0.1"
+                  value={safeSelectedElement.opacity}
+                  onChange={(e) => handleUpdate({ opacity: Number(e.target.value) })}
+                  className="w-full h-1 bg-gray-700 rounded-lg appearance-none cursor-pointer slider"
+                />
+                <div className="text-xs text-gray-400 text-center">
+                  {Math.round(safeSelectedElement.opacity * 100)}%
                 </div>
               </div>
             </div>
-          ) : (
-            /* Advanced Material Subtab Content */
-            <ShapeMaterialPanel
-              selectedElements={selectedElements}
-              updateElement={updateElement}
-            />
-          )}
+          </div>
         </div>
       )}
 

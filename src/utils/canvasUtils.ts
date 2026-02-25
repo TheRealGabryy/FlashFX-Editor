@@ -1,5 +1,6 @@
 import { DesignElement } from '../types/design';
 import { shapeDefaultsService, ShapeDefaults } from '../services/ShapeDefaultsService';
+import { createSolidColorMaterialConfig } from '../types/material';
 
 export interface CanvasViewport {
   width: number;
@@ -103,6 +104,8 @@ export const createShapeAtCenter = (
   const defaultsKey = mapShapeTypeToDefaultsKey(type);
   const defaults = defaultsKey ? shapeDefaultsService.getShapeDefaults(defaultsKey) : {};
 
+  const defaultColor = (defaults as any).material?.color || (defaults as any).fill || '#3B82F6';
+
   const baseElement: DesignElement = {
     id: Date.now().toString(),
     type,
@@ -115,6 +118,7 @@ export const createShapeAtCenter = (
     locked: false,
     visible: true,
     ...defaults,
+    materialConfig: createSolidColorMaterialConfig(defaultColor),
     ...customProps
   };
 

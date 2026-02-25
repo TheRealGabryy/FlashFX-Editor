@@ -357,6 +357,19 @@ export const createDefaultShapeMaterial = (): ShapeMaterialConfig => ({
   layers: []
 });
 
+export const createSolidColorMaterialConfig = (color: string): ShapeMaterialConfig => ({
+  enabled: true,
+  layers: [{
+    id: `layer-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+    type: 'linear',
+    colorStops: [createDefaultMaterialColorStop(color, 0)],
+    direction: 'top-to-bottom',
+    angle: 180,
+    blendMode: 'normal',
+    opacity: 100
+  }]
+});
+
 export const getMaterialGradientCSS = (layer: MaterialFillLayer): string => {
   const stops = layer.colorStops
     .sort((a, b) => a.position - b.position)

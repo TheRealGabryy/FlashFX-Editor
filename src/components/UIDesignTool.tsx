@@ -26,6 +26,7 @@ import { CanvasViewport } from '../utils/canvasUtils';
 import { PresetService } from '../services/PresetService';
 import { supabase } from '../lib/supabase';
 import { shapeDefaultsService } from '../services/ShapeDefaultsService';
+import { createSolidColorMaterialConfig } from '../types/material';
 import { getDefaultImageFilters } from '../utils/imageFilters';
 import { Preset } from '../types/preset';
 import { splitTextWithAnimation } from '../utils/textAnimationSplitter';
@@ -743,11 +744,14 @@ const UIDesignToolContent: React.FC<UIDesignToolContentProps> = ({ onBackToMain,
 
     const defaultsKey = type === 'chat-bubble' ? 'chatBubble' : type === 'chat-frame' ? 'chatFrame' : type;
     const defaults = shapeDefaultsService.getShapeDefaults(defaultsKey as any);
+    const defaultColor = (defaults as any).material?.color || (defaults as any).fill || '#3B82F6';
+    const materialConfig = createSolidColorMaterialConfig(defaultColor);
 
     if (type === 'line') {
       const lineElement: DesignElement = {
         ...element,
         ...defaults,
+        materialConfig,
         cornerRadius: 0,
         pointCornerRadii: [],
         points: [
@@ -761,7 +765,7 @@ const UIDesignToolContent: React.FC<UIDesignToolContentProps> = ({ onBackToMain,
       } as DesignElement;
       addElement(lineElement);
     } else {
-      addElement({ ...element, ...defaults } as DesignElement);
+      addElement({ ...element, ...defaults, materialConfig } as DesignElement);
     }
   }, [addElement, pan, zoom]);
 
