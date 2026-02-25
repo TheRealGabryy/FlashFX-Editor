@@ -1,8 +1,7 @@
 import React, { useRef, useState } from 'react';
-import { Square, Circle, Type, MessageCircle, Smartphone, Grid2x2 as Grid, Settings, ZoomIn, ZoomOut, Minus, ArrowRight, PenTool, Plus, Download, Star, Palette, Layers, FileCode, Upload, FolderOpen, Save, LogOut, HelpCircle, Undo2, Redo2 } from 'lucide-react';
+import { Square, Circle, Type, MessageCircle, Smartphone, Grid2x2 as Grid, Settings, Minus, Plus, Download, Star, Palette, Layers, FileCode, Upload, FolderOpen, Save, LogOut, Undo2, Redo2 } from 'lucide-react';
 import { DesignElement } from '../../types/design';
 import { createShapeAtCenter, CanvasViewport } from '../../utils/canvasUtils';
-import LayoutModeSwitcher from './LayoutModeSwitcher';
 import { LayoutMode } from '../../hooks/useLayoutMode';
 import ImageImportMenu from '../image/ImageImportMenu';
 import GoogleImageSearchModal from '../image/GoogleImageSearchModal';
@@ -14,8 +13,8 @@ interface HorizontalShapesBarProps {
   onAddMultipleElements?: (elements: DesignElement[]) => void;
   canvasSize: { width: number; height: number };
   viewport: CanvasViewport;
-  zoom: number;
-  setZoom: (zoom: number) => void;
+  zoom?: number;
+  setZoom?: (zoom: number) => void;
   onOpenGridSettings: () => void;
   onOpenEditorSettings?: () => void;
   onOpenTutorial?: () => void;
@@ -42,8 +41,6 @@ const HorizontalShapesBar: React.FC<HorizontalShapesBarProps> = ({
   onAddMultipleElements,
   canvasSize,
   viewport,
-  zoom,
-  setZoom,
   onOpenGridSettings,
   onOpenEditorSettings,
   onOpenTutorial,
@@ -343,11 +340,10 @@ const HorizontalShapesBar: React.FC<HorizontalShapesBarProps> = ({
   };
 
   return (
-    <div className="h-12 bg-gray-800/50 backdrop-blur-xl border-b border-gray-700/50 flex items-center justify-between px-4 flex-shrink-0" data-tutorial-target="toolbar">
+    <div className="h-12 bg-gray-800/50 backdrop-blur-xl border-b border-gray-700/50 flex items-center justify-between px-2 flex-shrink-0 min-w-0" data-tutorial-target="toolbar">
       {/* Left side - Shape tools */}
-      <div className="flex items-center space-x-2">
-        <div className="text-xs text-gray-400 mr-1">Shapes:</div>
-        <div className="flex items-center space-x-1">
+      <div className="flex items-center min-w-0 overflow-x-auto flex-1">
+        <div className="flex items-center gap-1 flex-shrink-0">
           {/* Image Import Button - FIRST */}
           <button
             ref={imageButtonRef}
@@ -438,38 +434,11 @@ const HorizontalShapesBar: React.FC<HorizontalShapesBarProps> = ({
         </div>
       </div>
 
-      {/* Center section - Zoom controls */}
-      <div className="flex items-center space-x-2">
-        <div className="text-xs text-gray-400 mr-1">Zoom:</div>
-        
-        <button
-          onClick={() => setZoom(Math.max(0.1, zoom - 0.25))}
-          className="w-8 h-8 rounded-md bg-gray-700/50 hover:bg-gray-600/50 transition-all duration-200 hover:scale-105 flex items-center justify-center"
-          title="Zoom Out"
-        >
-          <ZoomOut className="w-4 h-4 text-gray-300 hover:text-yellow-400" />
-        </button>
-        
-        <span className="text-xs text-gray-400 px-2 min-w-[50px] text-center">
-          {Math.round(zoom * 100)}%
-        </span>
-        
-        <button
-          onClick={() => setZoom(Math.min(3, zoom + 0.25))}
-          className="w-8 h-8 rounded-md bg-gray-700/50 hover:bg-gray-600/50 transition-all duration-200 hover:scale-105 flex items-center justify-center"
-          title="Zoom In"
-        >
-          <ZoomIn className="w-4 h-4 text-gray-300 hover:text-yellow-400" />
-        </button>
-      </div>
-
       {/* Right side - Undo/Redo, Grid controls, Load, Settings, Export, Save, Exit */}
-      <div className="flex items-center space-x-4">
+      <div className="flex items-center gap-1 flex-shrink-0 ml-2">
         {/* Undo/Redo Controls */}
         {onUndo && onRedo && (
-          <div className="flex items-center space-x-2">
-            <div className="text-xs text-gray-400 mr-1">History:</div>
-
+          <div className="flex items-center gap-1">
             <button
               onClick={onUndo}
               disabled={!canUndo}
@@ -499,9 +468,7 @@ const HorizontalShapesBar: React.FC<HorizontalShapesBarProps> = ({
         )}
 
         {/* Grid Controls */}
-        <div className="flex items-center space-x-2">
-        <div className="text-xs text-gray-400 mr-1">Grid:</div>
-
+        <div className="flex items-center gap-1">
         <button
           onClick={onToggleGrid}
           className={`w-8 h-8 rounded-md transition-all duration-200 hover:scale-105 flex items-center justify-center ${
