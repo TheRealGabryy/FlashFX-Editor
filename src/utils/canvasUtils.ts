@@ -136,40 +136,40 @@ export const createShapeAtCenter = (
 
   if (type === 'star') {
     return {
-      ...baseElement,
       starPoints: 5,
-      starInnerRadius: 50
+      starInnerRadius: 50,
+      ...baseElement
     };
   }
 
   if (type === 'gradient') {
     return {
-      ...baseElement,
       gradientEnabled: true,
       gradientType: 'linear',
       gradientAngle: 45,
       gradientCenterX: 50,
-      gradientCenterY: 50
+      gradientCenterY: 50,
+      ...baseElement
     };
   }
 
   if (type === 'adjustment-layer') {
     return {
-      ...baseElement,
       adjustmentType: 'brightness-contrast',
       adjustmentIntensity: 50,
-      blendMode: 'normal'
+      blendMode: 'normal',
+      ...baseElement
     };
   }
 
   if (type === 'svg') {
     return {
-      ...baseElement,
       svgData: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/></svg>',
       svgViewBox: '0 0 24 24',
       svgPreserveAspectRatio: 'xMidYMid meet',
       svgFillColor: '#3B82F6',
-      svgStrokeColor: '#1E40AF'
+      svgStrokeColor: '#1E40AF',
+      ...baseElement
     };
   }
 

@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { ChevronDown, ChevronUp, RotateCcw, Save } from 'lucide-react';
 import { shapeDefaultsService, ShapeDefaults } from '../../services/ShapeDefaultsService';
 import { DesignElement } from '../../types/design';
+import { createDefaultMaterial } from '../../types/material';
 
 interface CategoryState {
   rectangle: boolean;
@@ -167,13 +168,25 @@ const DefaultShapesSettings: React.FC = () => {
     </div>
   );
 
+  const getFillColor = (shapeType: keyof ShapeDefaults, fallback: string): string => {
+    return defaults[shapeType].material?.color || defaults[shapeType].fill || fallback;
+  };
+
+  const setFillColor = (shapeType: keyof ShapeDefaults, value: string) => {
+    const currentMaterial = defaults[shapeType].material || createDefaultMaterial('matte');
+    updateShapeDefault(shapeType, {
+      fill: value,
+      material: { ...currentMaterial, color: value }
+    });
+  };
+
   const renderRectangleSettings = () => (
     <div className="space-y-3 p-3 bg-gray-800/30 rounded-lg">
       <div className="grid grid-cols-2 gap-3">
         <ColorInput
           label="Fill Color"
-          value={defaults.rectangle.fill || '#3B82F6'}
-          onChange={(value) => updateShapeDefault('rectangle', { fill: value })}
+          value={getFillColor('rectangle', '#3B82F6')}
+          onChange={(value) => setFillColor('rectangle', value)}
         />
         <ColorInput
           label="Stroke Color"
@@ -248,8 +261,8 @@ const DefaultShapesSettings: React.FC = () => {
       <div className="grid grid-cols-2 gap-3">
         <ColorInput
           label="Fill Color"
-          value={defaults.circle.fill || '#EF4444'}
-          onChange={(value) => updateShapeDefault('circle', { fill: value })}
+          value={getFillColor('circle', '#EF4444')}
+          onChange={(value) => setFillColor('circle', value)}
         />
         <ColorInput
           label="Stroke Color"
@@ -328,8 +341,8 @@ const DefaultShapesSettings: React.FC = () => {
         />
         <ColorInput
           label="Background"
-          value={defaults.text.fill || '#FFFFFF'}
-          onChange={(value) => updateShapeDefault('text', { fill: value })}
+          value={getFillColor('text', '#FFFFFF')}
+          onChange={(value) => setFillColor('text', value)}
         />
       </div>
 
@@ -393,8 +406,8 @@ const DefaultShapesSettings: React.FC = () => {
       <div className="grid grid-cols-2 gap-3">
         <ColorInput
           label="Fill Color"
-          value={defaults.button.fill || '#FFD700'}
-          onChange={(value) => updateShapeDefault('button', { fill: value })}
+          value={getFillColor('button', '#FFD700')}
+          onChange={(value) => setFillColor('button', value)}
         />
         <ColorInput
           label="Stroke Color"
@@ -474,8 +487,8 @@ const DefaultShapesSettings: React.FC = () => {
       <div className="grid grid-cols-2 gap-3">
         <ColorInput
           label="Fill Color"
-          value={defaults.chatBubble.fill || '#1F2937'}
-          onChange={(value) => updateShapeDefault('chatBubble', { fill: value })}
+          value={getFillColor('chatBubble', '#1F2937')}
+          onChange={(value) => setFillColor('chatBubble', value)}
         />
         <ColorInput
           label="Stroke Color"
@@ -531,8 +544,8 @@ const DefaultShapesSettings: React.FC = () => {
       <div className="grid grid-cols-2 gap-3">
         <ColorInput
           label="Fill Color"
-          value={defaults.chatFrame.fill || '#000000'}
-          onChange={(value) => updateShapeDefault('chatFrame', { fill: value })}
+          value={getFillColor('chatFrame', '#000000')}
+          onChange={(value) => setFillColor('chatFrame', value)}
         />
         <ColorInput
           label="Stroke Color"
