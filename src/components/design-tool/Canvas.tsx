@@ -115,6 +115,16 @@ const Canvas: React.FC<CanvasProps> = ({
 
   const canvasCenter = { x: canvasWidth / 2, y: canvasHeight / 2 };
 
+  const handleWheel = useCallback((e: React.WheelEvent) => {
+    if (!setZoom) return;
+    e.preventDefault();
+    if (e.deltaY < 0) {
+      setZoom(Math.min(3, zoom + 0.05));
+    } else {
+      setZoom(Math.max(0.25, zoom - 0.05));
+    }
+  }, [zoom, setZoom]);
+
   // Callbacks to track element manipulation state
   const handleManipulationStart = useCallback((elementId: string) => {
     setManipulatingElements(prev => new Set(prev).add(elementId));
@@ -583,7 +593,7 @@ const Canvas: React.FC<CanvasProps> = ({
   };
 
   return (
-    <div className="w-full h-full relative overflow-hidden bg-gray-900 editor-cursor-default">
+    <div className="w-full h-full relative overflow-hidden bg-gray-900 editor-cursor-default" onWheel={handleWheel}>
       <div
         ref={canvasRef}
         className={`w-full h-full flex items-center justify-center p-4 ${isDragging || selectionBox ? 'editor-cursor-dragging' : 'editor-cursor-default'}`}
