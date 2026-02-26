@@ -936,9 +936,17 @@ const Canvas: React.FC<CanvasProps> = ({
         />
       )}
 
-      {/* Zoom indicator */}
-      <div className="absolute bottom-4 right-4 px-3 py-1 bg-gray-800/80 backdrop-blur-sm rounded-lg border border-gray-700/50">
-        <span className="text-sm text-gray-300">{Math.round(zoom * 100)}%</span>
+      {/* Zoom and position indicator */}
+      <div className="absolute bottom-4 right-4 flex items-center gap-3 px-3 py-1.5 bg-gray-800/80 backdrop-blur-sm rounded-lg border border-gray-700/50">
+        <span className="text-xs text-gray-400 font-mono">
+          <span className="text-gray-500 mr-1">X</span>
+          <span className="text-gray-200">{Math.round(pan.x)}</span>
+          <span className="text-gray-500 mx-1.5">Y</span>
+          <span className="text-gray-200">{Math.round(pan.y)}</span>
+          <span className="text-gray-500 ml-1 text-[10px]">px</span>
+        </span>
+        <div className="w-px h-3 bg-gray-600" />
+        <span className="text-sm text-gray-300 font-mono">{Math.round(zoom * 100)}%</span>
       </div>
     </div>
   );
