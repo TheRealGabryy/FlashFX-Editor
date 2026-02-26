@@ -513,7 +513,7 @@ const GeneralTimeline: React.FC<GeneralTimelineProps> = ({ elements, compactMode
               return (
                 <div
                   key={element.id}
-                  className={`h-10 border-b border-gray-700/30 flex items-center gap-1 cursor-pointer transition-colors ${
+                  className={`h-7 border-b border-gray-700/30 flex items-center gap-1 cursor-pointer transition-colors ${
                     isSelected ? 'bg-amber-500/20' : 'hover:bg-gray-700/30'
                   }`}
                   style={{ paddingLeft: `${8 + depth * 12}px`, paddingRight: '8px' }}
@@ -674,16 +674,10 @@ const GeneralTimeline: React.FC<GeneralTimelineProps> = ({ elements, compactMode
                   return (
                     <div
                       key={element.id}
-                      className="h-10 border-b border-gray-700/30 relative"
+                      className="h-7 border-b border-black/60 relative"
                     >
                       <div
-                        className={`absolute top-1 bottom-1 rounded transition-all group ${
-                          isSelected
-                            ? 'ring-2 ring-amber-400 ring-offset-1 ring-offset-gray-900'
-                            : isHovered
-                            ? 'ring-1 ring-gray-500'
-                            : ''
-                        }`}
+                        className="absolute top-0 bottom-0 transition-all group border-b border-black/60"
                         style={{
                           left: `${clipX}px`,
                           width: `${clipWidth}px`,
@@ -693,21 +687,25 @@ const GeneralTimeline: React.FC<GeneralTimelineProps> = ({ elements, compactMode
                         onMouseEnter={() => setHoveredClipId(element.id)}
                         onMouseLeave={() => setHoveredClipId(null)}
                       >
+                        {isSelected && (
+                          <div className="absolute inset-0 bg-amber-400/20 pointer-events-none z-10" />
+                        )}
+                        {isHovered && !isSelected && (
+                          <div className="absolute inset-0 bg-white/10 pointer-events-none z-10" />
+                        )}
+
                         <div
-                          className="absolute inset-0 px-2 flex items-center justify-between overflow-hidden cursor-move"
+                          className="absolute inset-0 flex items-center justify-end pr-1.5 overflow-hidden cursor-move"
                           onClick={(e) => handleClipClick(element.id, e)}
                           onMouseDown={(e) => !isLocked && handleClipDragStart(element.id, e)}
                           onContextMenu={(e) => handleClipContextMenu(element.id, e)}
                         >
-                          <span className="text-xs text-white font-medium truncate drop-shadow-sm pointer-events-none">
-                            {element.name || (isGroup ? 'Group' : 'Layer')}
-                          </span>
                           {hasKeyframes && (
                             <div className="flex items-center gap-0.5 pointer-events-none">
                               {animation?.tracks.slice(0, 3).map((track, i) => (
                                 <div
                                   key={i}
-                                  className="w-1.5 h-1.5 bg-white/80 rounded-full"
+                                  className="w-1 h-1 bg-white/60 rounded-full"
                                   title={`${track.keyframes.length} keyframes`}
                                 />
                               ))}
@@ -716,11 +714,11 @@ const GeneralTimeline: React.FC<GeneralTimelineProps> = ({ elements, compactMode
                         </div>
 
                         <div
-                          className="absolute left-0 top-0 bottom-0 w-2 cursor-ew-resize opacity-0 group-hover:opacity-100 bg-white/30 hover:bg-white/50 rounded-l z-10"
+                          className="absolute left-0 top-0 bottom-0 w-1.5 cursor-ew-resize opacity-0 group-hover:opacity-100 bg-black/20 hover:bg-black/40 z-10"
                           onMouseDown={(e) => !isLocked && handleClipResize(element.id, 'left', e)}
                         />
                         <div
-                          className="absolute right-0 top-0 bottom-0 w-2 cursor-ew-resize opacity-0 group-hover:opacity-100 bg-white/30 hover:bg-white/50 rounded-r z-10"
+                          className="absolute right-0 top-0 bottom-0 w-1.5 cursor-ew-resize opacity-0 group-hover:opacity-100 bg-black/20 hover:bg-black/40 z-10"
                           onMouseDown={(e) => !isLocked && handleClipResize(element.id, 'right', e)}
                         />
                       </div>
