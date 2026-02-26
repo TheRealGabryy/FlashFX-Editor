@@ -32,6 +32,7 @@ const DEFAULT_SHAPE_SETTINGS: ShapeDefaults = {
     }
   },
   circle: {
+    fill: '#404040',
     material: { ...createDefaultMaterial('matte'), color: '#404040' },
     stroke: '#404040',
     strokeWidth: 2,

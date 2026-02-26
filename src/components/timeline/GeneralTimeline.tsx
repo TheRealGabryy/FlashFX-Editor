@@ -681,8 +681,8 @@ const GeneralTimeline: React.FC<GeneralTimelineProps> = ({ elements, compactMode
                         style={{
                           left: `${clipX}px`,
                           width: `${clipWidth}px`,
-                          backgroundColor: element.fill || '#60a5fa',
-                          opacity: isMuted ? 0.3 : (depth > 0 ? 0.7 : 0.85),
+                          backgroundColor: '#3b82f6',
+                          opacity: isMuted ? 0.3 : (depth > 0 ? 0.7 : 1),
                         }}
                         onMouseEnter={() => setHoveredClipId(element.id)}
                         onMouseLeave={() => setHoveredClipId(null)}
