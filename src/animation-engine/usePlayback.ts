@@ -1,5 +1,6 @@
 import { useRef, useCallback, useEffect } from 'react';
 import { useAnimation } from './AnimationContext';
+import { PlaybackScheduler } from '../engine/core/PlaybackScheduler';
 
 interface UsePlaybackReturn {
   play: () => void;
@@ -21,184 +22,111 @@ interface UsePlaybackReturn {
 }
 
 export function usePlayback(): UsePlaybackReturn {
-  const { state, setCurrentTime, setCurrentFrame, setPlaying, stepFrame } = useAnimation();
+  const { state, setCurrentTime, setCurrentFrame, setPlaying } = useAnimation();
   const { currentTime, currentFrame, duration, fps, isPlaying, loop } = state.timeline;
   const totalFrames = Math.ceil(duration * fps);
 
-  // Use refs to store internal state that doesn't trigger re-renders
-  const animationFrameRef = useRef<number | null>(null);
-  const lastTimestampRef = useRef<number>(0);
-  const internalTimeRef = useRef<number>(currentTime);
-  const isPlayingRef = useRef<boolean>(isPlaying);
-  const durationRef = useRef<number>(duration);
-  const loopRef = useRef<boolean>(loop);
-  const fpsRef = useRef<number>(fps);
+  const schedulerRef = useRef<PlaybackScheduler | null>(null);
+  const setCurrentTimeRef = useRef(setCurrentTime);
+  const setPlayingRef = useRef(setPlaying);
 
-  // Sync refs when props change (from external seeking, sequence changes, etc.)
-  useEffect(() => {
-    internalTimeRef.current = currentTime;
-  }, [currentTime]);
+  setCurrentTimeRef.current = setCurrentTime;
+  setPlayingRef.current = setPlaying;
 
-  useEffect(() => {
-    isPlayingRef.current = isPlaying;
-  }, [isPlaying]);
-
-  useEffect(() => {
-    durationRef.current = duration;
-  }, [duration]);
-
-  useEffect(() => {
-    loopRef.current = loop;
-  }, [loop]);
+  if (!schedulerRef.current) {
+    schedulerRef.current = new PlaybackScheduler(
+      { fps, duration, loop },
+      {
+        onFrame: (time) => {
+          setCurrentTimeRef.current(time);
+        },
+        onStateChange: (newState) => {
+          setPlayingRef.current(newState === 'playing');
+        },
+        onComplete: () => {
+          setPlayingRef.current(false);
+        },
+      }
+    );
+  }
 
   useEffect(() => {
-    fpsRef.current = fps;
-  }, [fps]);
+    schedulerRef.current?.updateConfig({ fps, duration, loop });
+    schedulerRef.current?.setLoop(loop);
+  }, [fps, duration, loop]);
+
+  useEffect(() => {
+    return () => {
+      schedulerRef.current?.destroy();
+    };
+  }, []);
 
   const play = useCallback(() => {
-    setPlaying(true);
-  }, [setPlaying]);
+    const scheduler = schedulerRef.current;
+    if (!scheduler) return;
+    scheduler.seek(state.timeline.currentTime);
+    scheduler.play();
+  }, [state.timeline.currentTime]);
 
   const pause = useCallback(() => {
-    setPlaying(false);
-    if (animationFrameRef.current) {
-      cancelAnimationFrame(animationFrameRef.current);
-      animationFrameRef.current = null;
-    }
-  }, [setPlaying]);
+    schedulerRef.current?.pause();
+  }, []);
 
   const stop = useCallback(() => {
-    setPlaying(false);
-    internalTimeRef.current = 0;
-    setCurrentTime(0);
-    if (animationFrameRef.current) {
-      cancelAnimationFrame(animationFrameRef.current);
-      animationFrameRef.current = null;
-    }
-  }, [setPlaying, setCurrentTime]);
+    schedulerRef.current?.stop();
+  }, []);
 
   const togglePlay = useCallback(() => {
-    if (isPlayingRef.current) {
-      pause();
+    const scheduler = schedulerRef.current;
+    if (!scheduler) return;
+
+    if (scheduler.getState() === 'playing') {
+      scheduler.pause();
     } else {
-      // If at the end, restart from beginning
-      if (internalTimeRef.current >= durationRef.current) {
-        internalTimeRef.current = 0;
-        setCurrentTime(0);
+      if (scheduler.getCurrentTime() >= duration) {
+        scheduler.seek(0);
       }
-      play();
+      scheduler.play();
     }
-  }, [play, pause, setCurrentTime]);
+  }, [duration]);
 
   const seekTo = useCallback((time: number) => {
-    const clampedTime = Math.max(0, Math.min(time, durationRef.current));
-    internalTimeRef.current = clampedTime;
-    setCurrentTime(clampedTime);
-  }, [setCurrentTime]);
+    const clamped = Math.max(0, Math.min(time, duration));
+    schedulerRef.current?.seek(clamped);
+    setCurrentTime(clamped);
+  }, [duration, setCurrentTime]);
 
   const seekToStart = useCallback(() => {
-    internalTimeRef.current = 0;
+    schedulerRef.current?.seek(0);
     setCurrentTime(0);
   }, [setCurrentTime]);
 
   const seekToEnd = useCallback(() => {
-    internalTimeRef.current = durationRef.current;
-    setCurrentTime(durationRef.current);
-    if (isPlayingRef.current) {
-      pause();
+    schedulerRef.current?.seek(duration);
+    setCurrentTime(duration);
+    if (schedulerRef.current?.getState() === 'playing') {
+      schedulerRef.current.pause();
     }
-  }, [setCurrentTime, pause]);
+  }, [duration, setCurrentTime]);
 
   const seekToFrame = useCallback((frame: number) => {
     const clampedFrame = Math.max(0, Math.min(frame, totalFrames - 1));
+    const time = clampedFrame / fps;
+    schedulerRef.current?.seek(time);
     setCurrentFrame(clampedFrame);
-    // Also update internal time ref
-    const newTime = clampedFrame / fpsRef.current;
-    internalTimeRef.current = newTime;
-  }, [totalFrames, setCurrentFrame]);
+  }, [totalFrames, fps, setCurrentFrame]);
 
   const stepForward = useCallback(() => {
-    stepFrame('forward');
-    // Sync internal time with new frame
+    schedulerRef.current?.stepForward();
     const newFrame = Math.min(currentFrame + 1, totalFrames - 1);
-    internalTimeRef.current = newFrame / fpsRef.current;
-  }, [stepFrame, currentFrame, totalFrames]);
+    setCurrentFrame(newFrame);
+  }, [currentFrame, totalFrames, setCurrentFrame]);
 
   const stepBackward = useCallback(() => {
-    stepFrame('backward');
-    // Sync internal time with new frame
+    schedulerRef.current?.stepBackward();
     const newFrame = Math.max(currentFrame - 1, 0);
-    internalTimeRef.current = newFrame / fpsRef.current;
-  }, [stepFrame, currentFrame]);
-
-  // The main animation loop - runs independently of React's render cycle
-  useEffect(() => {
-    if (!isPlaying) {
-      // Clean up when not playing
-      if (animationFrameRef.current) {
-        cancelAnimationFrame(animationFrameRef.current);
-        animationFrameRef.current = null;
-      }
-      return;
-    }
-
-    // Initialize timestamp on play
-    lastTimestampRef.current = performance.now();
-
-    const animate = (timestamp: number) => {
-      // Check if still playing (using ref to avoid stale closure)
-      if (!isPlayingRef.current) {
-        animationFrameRef.current = null;
-        return;
-      }
-
-      // Calculate delta time in seconds
-      const deltaMs = timestamp - lastTimestampRef.current;
-      lastTimestampRef.current = timestamp;
-      const deltaSeconds = deltaMs / 1000;
-
-      // Update internal time
-      let newTime = internalTimeRef.current + deltaSeconds;
-
-      // Handle end of timeline
-      if (newTime >= durationRef.current) {
-        if (loopRef.current) {
-          // Loop back to start
-          newTime = 0;
-          internalTimeRef.current = 0;
-          setCurrentTime(0);
-        } else {
-          // Stop at end
-          newTime = durationRef.current;
-          internalTimeRef.current = durationRef.current;
-          setCurrentTime(durationRef.current);
-          setPlaying(false);
-          animationFrameRef.current = null;
-          return;
-        }
-      } else {
-        // Normal progression
-        internalTimeRef.current = newTime;
-        setCurrentTime(newTime);
-      }
-
-      // Schedule next frame
-      animationFrameRef.current = requestAnimationFrame(animate);
-    };
-
-    // Start the animation loop
-    animationFrameRef.current = requestAnimationFrame(animate);
-
-    // Cleanup function
-    return () => {
-      if (animationFrameRef.current) {
-        cancelAnimationFrame(animationFrameRef.current);
-        animationFrameRef.current = null;
-      }
-    };
-  }, [isPlaying, setCurrentTime, setPlaying]);
-  // NOTE: Deliberately NOT including currentTime, duration, loop, fps in dependencies
-  // They are tracked via refs to avoid restarting the animation loop
+    setCurrentFrame(newFrame);
+  }, [currentFrame, setCurrentFrame]);
 
   return {
     play,

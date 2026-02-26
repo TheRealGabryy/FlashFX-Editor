@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useReducer, useCallback, useMemo } from 'react';
+import React, { createContext, useContext, useReducer, useCallback, useMemo, useRef, useEffect } from 'react';
 import {
   AnimationState,
   ElementAnimation,
@@ -20,8 +20,9 @@ import {
   TimelineMarker,
   createMarker,
 } from './types';
-import { getAnimatedValue, isColorProperty } from './interpolation';
 import { DesignElement } from '../types/design';
+import { TimelineEngine } from '../engine/core/TimelineEngine';
+import { animationsToEngineClips } from '../engine/ReactBridge';
 
 type AnimationAction =
   | { type: 'SET_CURRENT_TIME'; time: number }
@@ -520,6 +521,28 @@ const initialState: AnimationState = {
 export function AnimationProvider({ children }: { children: React.ReactNode }) {
   const [state, dispatch] = useReducer(animationReducer, initialState);
 
+  const engineRef = useRef<TimelineEngine | null>(null);
+  if (!engineRef.current) {
+    engineRef.current = new TimelineEngine({
+      fps: DEFAULT_TIMELINE_STATE.fps,
+      duration: DEFAULT_TIMELINE_STATE.duration,
+      loop: DEFAULT_TIMELINE_STATE.loop,
+    });
+  }
+
+  useEffect(() => {
+    engineRef.current?.setConfig({
+      fps: state.timeline.fps,
+      duration: state.timeline.duration,
+      loop: state.timeline.loop,
+    });
+  }, [state.timeline.fps, state.timeline.duration, state.timeline.loop]);
+
+  useEffect(() => {
+    const clips = animationsToEngineClips(state.animations);
+    engineRef.current?.loadClipsFromAnimations(clips);
+  }, [state.animations]);
+
   const setCurrentTime = useCallback((time: number) => {
     dispatch({ type: 'SET_CURRENT_TIME', time });
   }, []);
@@ -605,72 +628,44 @@ export function AnimationProvider({ children }: { children: React.ReactNode }) {
 
   const getAnimatedElementState = useCallback(
     (element: DesignElement): Partial<DesignElement> => {
-      const animation = state.animations[element.id];
-      if (!animation || animation.muted) {
-        return {};
-      }
+      const engine = engineRef.current;
+      if (!engine) return {};
 
-      const { currentTime } = state.timeline;
+      const resolved = engine.getStateAtTime(state.timeline.currentTime);
+      const props = resolved.get(element.id);
+      if (!props) return {};
+
       const animatedProps: Partial<DesignElement> = {};
-
-      for (const track of animation.tracks) {
-        if (!track.enabled || track.keyframes.length === 0) continue;
-
-        const value = getAnimatedValue(animation.tracks, track.property, currentTime);
-        if (value !== null) {
-          switch (track.property) {
-            case 'x':
-              animatedProps.x = value as number;
-              break;
-            case 'y':
-              animatedProps.y = value as number;
-              break;
-            case 'width':
-              animatedProps.width = value as number;
-              break;
-            case 'height':
-              animatedProps.height = value as number;
-              break;
-            case 'rotation':
-              animatedProps.rotation = value as number;
-              break;
-            case 'opacity':
-              animatedProps.opacity = value as number;
-              break;
-            case 'fill':
-              animatedProps.fill = value as string;
-              break;
-            case 'stroke':
-              animatedProps.stroke = value as string;
-              break;
-            case 'strokeWidth':
-              animatedProps.strokeWidth = value as number;
-              break;
-            case 'borderRadius':
-              animatedProps.borderRadius = value as number;
-              break;
-            case 'shadowBlur':
-              animatedProps.shadow = { ...element.shadow, blur: value as number };
-              break;
-            case 'shadowX':
-              animatedProps.shadow = { ...element.shadow, x: value as number };
-              break;
-            case 'shadowY':
-              animatedProps.shadow = { ...element.shadow, y: value as number };
-              break;
-            case 'fontSize':
-              animatedProps.fontSize = value as number;
-              break;
-            case 'letterSpacing':
-              animatedProps.letterSpacing = value as number;
-              break;
-          }
+      for (const key of Object.keys(props)) {
+        const val = props[key];
+        if (val === undefined || key === '_pooled') continue;
+        switch (key) {
+          case 'x': animatedProps.x = val as number; break;
+          case 'y': animatedProps.y = val as number; break;
+          case 'width': animatedProps.width = val as number; break;
+          case 'height': animatedProps.height = val as number; break;
+          case 'rotation': animatedProps.rotation = val as number; break;
+          case 'opacity': animatedProps.opacity = val as number; break;
+          case 'fill': animatedProps.fill = val as string; break;
+          case 'stroke': animatedProps.stroke = val as string; break;
+          case 'strokeWidth': animatedProps.strokeWidth = val as number; break;
+          case 'borderRadius': animatedProps.borderRadius = val as number; break;
+          case 'shadowBlur':
+            animatedProps.shadow = { ...element.shadow, blur: val as number };
+            break;
+          case 'shadowX':
+            animatedProps.shadow = { ...(animatedProps.shadow || element.shadow), x: val as number };
+            break;
+          case 'shadowY':
+            animatedProps.shadow = { ...(animatedProps.shadow || element.shadow), y: val as number };
+            break;
+          case 'fontSize': animatedProps.fontSize = val as number; break;
+          case 'letterSpacing': animatedProps.letterSpacing = val as number; break;
         }
       }
-
       return animatedProps;
     },
-    [state.animations, state.timeline.currentTime]
+    [state.timeline.currentTime]
   );
 
   const hasKeyframesForProperty = useCallback(
@@ -724,71 +719,44 @@ export function AnimationProvider({ children }: { children: React.ReactNode }) {
 
   const computeAnimatedPropertiesAtTime = useCallback(
     (element: DesignElement, time: number): Partial<DesignElement> => {
-      const animation = state.animations[element.id];
-      if (!animation || animation.muted) {
-        return {};
-      }
+      const engine = engineRef.current;
+      if (!engine) return {};
+
+      const resolved = engine.getStateAtTime(time);
+      const props = resolved.get(element.id);
+      if (!props) return {};
 
       const animatedProps: Partial<DesignElement> = {};
-
-      for (const track of animation.tracks) {
-        if (!track.enabled || track.keyframes.length === 0) continue;
-
-        const value = getAnimatedValue(animation.tracks, track.property, time);
-        if (value !== null) {
-          switch (track.property) {
-            case 'x':
-              animatedProps.x = value as number;
-              break;
-            case 'y':
-              animatedProps.y = value as number;
-              break;
-            case 'width':
-              animatedProps.width = value as number;
-              break;
-            case 'height':
-              animatedProps.height = value as number;
-              break;
-            case 'rotation':
-              animatedProps.rotation = value as number;
-              break;
-            case 'opacity':
-              animatedProps.opacity = value as number;
-              break;
-            case 'fill':
-              animatedProps.fill = value as string;
-              break;
-            case 'stroke':
-              animatedProps.stroke = value as string;
-              break;
-            case 'strokeWidth':
-              animatedProps.strokeWidth = value as number;
-              break;
-            case 'borderRadius':
-              animatedProps.borderRadius = value as number;
-              break;
-            case 'shadowBlur':
-              animatedProps.shadow = { ...element.shadow, blur: value as number };
-              break;
-            case 'shadowX':
-              animatedProps.shadow = { ...element.shadow, x: value as number };
-              break;
-            case 'shadowY':
-              animatedProps.shadow = { ...element.shadow, y: value as number };
-              break;
-            case 'fontSize':
-              animatedProps.fontSize = value as number;
-              break;
-            case 'letterSpacing':
-              animatedProps.letterSpacing = value as number;
-              break;
-          }
+      for (const key of Object.keys(props)) {
+        const val = props[key];
+        if (val === undefined || key === '_pooled') continue;
+        switch (key) {
+          case 'x': animatedProps.x = val as number; break;
+          case 'y': animatedProps.y = val as number; break;
+          case 'width': animatedProps.width = val as number; break;
+          case 'height': animatedProps.height = val as number; break;
+          case 'rotation': animatedProps.rotation = val as number; break;
+          case 'opacity': animatedProps.opacity = val as number; break;
+          case 'fill': animatedProps.fill = val as string; break;
+          case 'stroke': animatedProps.stroke = val as string; break;
+          case 'strokeWidth': animatedProps.strokeWidth = val as number; break;
+          case 'borderRadius': animatedProps.borderRadius = val as number; break;
+          case 'shadowBlur':
+            animatedProps.shadow = { ...element.shadow, blur: val as number };
+            break;
+          case 'shadowX':
+            animatedProps.shadow = { ...(animatedProps.shadow || element.shadow), x: val as number };
+            break;
+          case 'shadowY':
+            animatedProps.shadow = { ...(animatedProps.shadow || element.shadow), y: val as number };
+            break;
+          case 'fontSize': animatedProps.fontSize = val as number; break;
+          case 'letterSpacing': animatedProps.letterSpacing = val as number; break;
         }
       }
-
       return animatedProps;
     },
-    [state.animations]
+    []
   );
 
   const addMarker = useCallback((time: number, name?: string, color?: string) => {

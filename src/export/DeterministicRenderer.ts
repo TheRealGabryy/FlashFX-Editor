@@ -1,7 +1,8 @@
 import { DesignElement } from '../types/design';
 import { BackgroundConfig } from '../types/background';
 import { ElementAnimation, PropertyTrack } from '../animation-engine/types';
-import { getAnimatedValue } from '../animation-engine/interpolation';
+import { TimelineEngine } from '../engine/core/TimelineEngine';
+import { animationsToEngineClips } from '../engine/ReactBridge';
 
 export interface RenderConfig {
   width: number;
@@ -32,12 +33,22 @@ export class DeterministicRenderer {
   private imageCache: ImageCache = {};
   private offscreenCanvas: HTMLCanvasElement;
   private offscreenCtx: CanvasRenderingContext2D;
+  private engine: TimelineEngine | null = null;
 
   constructor() {
     this.canvas = document.createElement('canvas');
     this.ctx = this.canvas.getContext('2d')!;
     this.offscreenCanvas = document.createElement('canvas');
     this.offscreenCtx = this.offscreenCanvas.getContext('2d')!;
+  }
+
+  private ensureEngine(animations: Record<string, ElementAnimation>): TimelineEngine {
+    if (!this.engine) {
+      this.engine = new TimelineEngine({ fps: 30, duration: 60, loop: false });
+    }
+    const clips = animationsToEngineClips(animations);
+    this.engine.loadClipsFromAnimations(clips);
+    return this.engine;
   }
 
   private async preloadImages(elements: DesignElement[]): Promise<void> {
@@ -68,60 +79,37 @@ export class DeterministicRenderer {
       return element;
     }
 
+    const engine = this.ensureEngine({ [element.id]: animation });
+    const resolved = engine.getStateAtTime(time);
+    const props = resolved.get(element.id);
+    if (!props) return element;
+
     const animatedProps: Partial<DesignElement> = {};
-
-    for (const track of animation.tracks) {
-      if (!track.enabled || track.keyframes.length === 0) continue;
-
-      const value = getAnimatedValue(animation.tracks, track.property, time);
-      if (value !== null) {
-        switch (track.property) {
-          case 'x':
-            animatedProps.x = value as number;
-            break;
-          case 'y':
-            animatedProps.y = value as number;
-            break;
-          case 'width':
-            animatedProps.width = value as number;
-            break;
-          case 'height':
-            animatedProps.height = value as number;
-            break;
-          case 'rotation':
-            animatedProps.rotation = value as number;
-            break;
-          case 'opacity':
-            animatedProps.opacity = value as number;
-            break;
-          case 'fill':
-            animatedProps.fill = value as string;
-            break;
-          case 'stroke':
-            animatedProps.stroke = value as string;
-            break;
-          case 'strokeWidth':
-            animatedProps.strokeWidth = value as number;
-            break;
-          case 'borderRadius':
-            animatedProps.borderRadius = value as number;
-            break;
-          case 'shadowBlur':
-            animatedProps.shadow = { ...element.shadow, blur: value as number };
-            break;
-          case 'shadowX':
-            animatedProps.shadow = { ...element.shadow, x: value as number };
-            break;
-          case 'shadowY':
-            animatedProps.shadow = { ...element.shadow, y: value as number };
-            break;
-          case 'fontSize':
-            animatedProps.fontSize = value as number;
-            break;
-          case 'letterSpacing':
-            animatedProps.letterSpacing = value as number;
-            break;
-        }
+    for (const key of Object.keys(props)) {
+      const val = props[key];
+      if (val === undefined || key === '_pooled') continue;
+      switch (key) {
+        case 'x': animatedProps.x = val as number; break;
+        case 'y': animatedProps.y = val as number; break;
+        case 'width': animatedProps.width = val as number; break;
+        case 'height': animatedProps.height = val as number; break;
+        case 'rotation': animatedProps.rotation = val as number; break;
+        case 'opacity': animatedProps.opacity = val as number; break;
+        case 'fill': animatedProps.fill = val as string; break;
+        case 'stroke': animatedProps.stroke = val as string; break;
+        case 'strokeWidth': animatedProps.strokeWidth = val as number; break;
+        case 'borderRadius': animatedProps.borderRadius = val as number; break;
+        case 'shadowBlur':
+          animatedProps.shadow = { ...element.shadow, blur: val as number };
+          break;
+        case 'shadowX':
+          animatedProps.shadow = { ...(animatedProps.shadow || element.shadow), x: val as number };
+          break;
+        case 'shadowY':
+          animatedProps.shadow = { ...(animatedProps.shadow || element.shadow), y: val as number };
+          break;
+        case 'fontSize': animatedProps.fontSize = val as number; break;
+        case 'letterSpacing': animatedProps.letterSpacing = val as number; break;
       }
     }
 
@@ -424,15 +412,15 @@ export class DeterministicRenderer {
 
     this.renderBackground(this.ctx, width, height, background);
 
-    const sortedElements = [...elements].sort((a, b) => {
-      const aIndex = elements.indexOf(a);
-      const bIndex = elements.indexOf(b);
-      return aIndex - bIndex;
-    });
+    const engine = this.ensureEngine(animations);
+    const resolved = engine.getStateAtTime(time);
 
-    for (const element of sortedElements) {
-      const animation = animations[element.id];
-      const animatedElement = this.computeAnimatedProperties(element, animation, time);
+    for (const element of elements) {
+      const props = resolved.get(element.id);
+      let animatedElement = element;
+      if (props) {
+        animatedElement = this.computeAnimatedProperties(element, animations[element.id], time);
+      }
       this.renderElement(this.ctx, animatedElement);
     }
 
