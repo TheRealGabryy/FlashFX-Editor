@@ -84,10 +84,6 @@ export class WebGLFilterProcessor {
     // Set up vertex buffer
     this.setupQuad();
 
-    // Clear canvas to transparent for chroma key support
-    gl.clearColor(0, 0, 0, 0);
-    gl.clear(gl.COLOR_BUFFER_BIT);
-
     // Apply filters in sequence
     let currentInput = inputTexture;
     let currentOutput = texture1;
@@ -96,7 +92,7 @@ export class WebGLFilterProcessor {
 
     // Chroma Key (applied first on original pixel colors)
     if (filters.chromaKeyEnabled) {
-      this.applyChromaKey(currentInput, currentOutput, currentFB, filters, image.width, image.height);
+      this.applyChromaKey(currentInput, currentOutput, currentFB, filters);
       flip = !flip;
       [currentInput, currentOutput] = [currentOutput, currentInput];
       [currentFB, fb1, fb2] = flip ? [fb2, fb2, fb1] : [fb1, fb1, fb2];
@@ -277,9 +273,7 @@ export class WebGLFilterProcessor {
     input: WebGLTexture,
     output: WebGLTexture,
     framebuffer: WebGLFramebuffer,
-    filters: ImageFilters,
-    width: number,
-    height: number
+    filters: ImageFilters
   ): void {
     if (!this.gl) return;
     const gl = this.gl;
@@ -291,7 +285,6 @@ export class WebGLFilterProcessor {
 
     gl.bindFramebuffer(gl.FRAMEBUFFER, framebuffer);
     gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, output, 0);
-    gl.viewport(0, 0, width, height);
 
     const hex = filters.chromaKeyColor.replace('#', '');
     const kr = parseInt(hex.slice(0, 2), 16) / 255;

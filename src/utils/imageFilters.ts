@@ -110,7 +110,7 @@ export const getDefaultImageFilters = (): ImageFilters => ({
   // Chroma Key
   chromaKeyEnabled: false,
   chromaKeyColor: '#00ff00',
-  chromaKeySimilarity: 20,
+  chromaKeySimilarity: 0,
   chromaKeyEdgeSmoothness: 10,
   chromaKeySpillReduction: 20,
 });

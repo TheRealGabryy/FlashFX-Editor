@@ -95,7 +95,7 @@ const ChromaKeyPanel: React.FC<ChromaKeyPanelProps> = ({ selectedElement, onFilt
     onFilterUpdate({
       chromaKeyEnabled: false,
       chromaKeyColor: '#00ff00',
-      chromaKeySimilarity: 20,
+      chromaKeySimilarity: 0,
       chromaKeyEdgeSmoothness: 10,
       chromaKeySpillReduction: 20,
     });
@@ -117,21 +117,15 @@ const ChromaKeyPanel: React.FC<ChromaKeyPanelProps> = ({ selectedElement, onFilt
         </button>
       </div>
 
-      <div className="flex items-center justify-between py-1 px-2 bg-gray-800/50 rounded border border-gray-700/50">
-        <span className="text-xs text-gray-300">Enable Chroma Key</span>
-        <button
-          onClick={() => onFilterUpdate({ chromaKeyEnabled: !filters.chromaKeyEnabled })}
-          className={`relative w-8 h-4 rounded-full transition-colors duration-200 ${
-            filters.chromaKeyEnabled ? 'bg-emerald-500' : 'bg-gray-600'
-          }`}
-        >
-          <span
-            className={`absolute top-0.5 w-3 h-3 bg-white rounded-full shadow transition-transform duration-200 ${
-              filters.chromaKeyEnabled ? 'translate-x-4' : 'translate-x-0.5'
-            }`}
-          />
-        </button>
-      </div>
+      <label className="flex items-center gap-2 py-1 px-2 bg-gray-800/50 rounded border border-gray-700/50 cursor-pointer hover:bg-gray-800/80 transition-colors">
+        <input
+          type="checkbox"
+          checked={filters.chromaKeyEnabled}
+          onChange={(e) => onFilterUpdate({ chromaKeyEnabled: e.target.checked })}
+          className="w-3.5 h-3.5 accent-emerald-500 cursor-pointer"
+        />
+        <span className="text-xs text-gray-300 select-none">Enable Chroma Key</span>
+      </label>
 
       {filters.chromaKeyEnabled && (
         <div className="space-y-2 pt-1">
@@ -212,7 +206,7 @@ const ChromaKeyPanel: React.FC<ChromaKeyPanelProps> = ({ selectedElement, onFilt
             value={filters.chromaKeySimilarity}
             min={0}
             max={100}
-            defaultValue={20}
+            defaultValue={0}
             onChange={(value) => onFilterUpdate({ chromaKeySimilarity: value })}
             snapToDefault={false}
           />
