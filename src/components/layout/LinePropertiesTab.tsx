@@ -407,7 +407,7 @@ const LinePropertiesTab: React.FC<LinePropertiesTabProps> = ({
                 </button>
               </div>
               
-              <div className="max-h-32 overflow-y-auto space-y-1">
+              <div className="max-h-72 overflow-y-auto space-y-1">
                 {selectedElement.points.map((point, index) => (
                   <div key={index} className="space-y-1">
                     <div className="flex items-center justify-between">

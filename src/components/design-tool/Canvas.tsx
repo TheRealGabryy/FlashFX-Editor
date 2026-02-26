@@ -407,7 +407,8 @@ const Canvas: React.FC<CanvasProps> = ({
   const handleDrawingMouseDown = useCallback((e: React.MouseEvent) => {
     if (e.button === 2) return;
     e.stopPropagation();
-    const { x, y } = getCanvasCoordinates(e.clientX, e.clientY);
+    const x = e.nativeEvent.offsetX;
+    const y = e.nativeEvent.offsetY;
 
     if (activeTool === 'line') {
       setLineDrawingPoints(prev => [...prev, { x, y }]);
@@ -416,10 +417,11 @@ const Canvas: React.FC<CanvasProps> = ({
       setPenDrawingActive(true);
       lastPenPoint.current = { x, y };
     }
-  }, [activeTool, getCanvasCoordinates]);
+  }, [activeTool]);
 
   const handleDrawingMouseMove = useCallback((e: React.MouseEvent) => {
-    const { x, y } = getCanvasCoordinates(e.clientX, e.clientY);
+    const x = e.nativeEvent.offsetX;
+    const y = e.nativeEvent.offsetY;
 
     if (activeTool === 'line') {
       setMousePreviewPos({ x, y });
@@ -433,7 +435,7 @@ const Canvas: React.FC<CanvasProps> = ({
         }
       }
     }
-  }, [activeTool, penDrawingActive, getCanvasCoordinates]);
+  }, [activeTool, penDrawingActive]);
 
   const handleDrawingMouseUp = useCallback(() => {
     if (activeTool === 'pen' && penDrawingActive) {

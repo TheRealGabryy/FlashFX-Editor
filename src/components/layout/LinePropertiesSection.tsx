@@ -313,7 +313,7 @@ const LinePropertiesSection: React.FC<LinePropertiesSectionProps> = ({
             </button>
           </div>
           
-          <div className="max-h-32 overflow-y-auto space-y-1">
+          <div className="max-h-48 overflow-y-auto space-y-1">
             {selectedElement.points.map((point, index) => (
               <div key={index} className="flex items-center space-x-1 text-xs">
                 <span className="text-gray-400 w-4">{index + 1}:</span>
