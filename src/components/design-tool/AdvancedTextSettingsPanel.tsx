@@ -21,13 +21,10 @@ const AdvancedTextSettingsPanel: React.FC<AdvancedTextSettingsPanelProps> = ({
     fill: false,
     texture: false,
     pattern: false,
-    richtext: false,
     stroke: false,
     shadow: false,
-    glow: false,
     spacing: false,
     layout: false,
-    advanced: false
   });
 
   const textureInputRef = useRef<HTMLInputElement>(null);
@@ -567,478 +564,298 @@ const AdvancedTextSettingsPanel: React.FC<AdvancedTextSettingsPanelProps> = ({
                 </div>
               </>
             )}
-          </div>
-        )}
-      </div>
 
-      {/* Texture Fill Section */}
-      <div className="border border-gray-700 rounded-lg overflow-hidden">
-        <button
-          onClick={() => toggleSection('texture')}
-          className="w-full flex items-center justify-between p-3 bg-gray-800 hover:bg-gray-750 transition-colors text-white"
-        >
-          <div className="flex items-center gap-2">
-            <ImageIcon className="w-4 h-4 text-white" />
-            <span className="font-medium text-white">Texture Fill</span>
-          </div>
-          {expandedSections.texture ? <ChevronDown className="w-4 h-4 text-white" /> : <ChevronRight className="w-4 h-4 text-white" />}
-        </button>
-
-        {expandedSections.texture && (
-          <div className="p-3 bg-gray-800/50 space-y-3">
-            {/* Enable Toggle */}
-            <div className="flex items-center justify-between p-3 bg-gray-900 rounded">
-              <span className="text-sm">Enable Texture Fill</span>
+            {/* Texture Fill Sub-section */}
+            <div className="border border-gray-600 rounded-lg overflow-hidden">
               <button
-                onClick={() => onUpdate({ textTextureFillEnabled: !element.textTextureFillEnabled })}
-                className={`w-12 h-6 rounded-full transition-colors relative ${
-                  element.textTextureFillEnabled ? 'bg-blue-600' : 'bg-gray-700'
-                }`}
+                onClick={() => toggleSection('texture')}
+                className="w-full flex items-center justify-between p-2.5 bg-gray-700/50 hover:bg-gray-700 transition-colors text-white"
               >
-                <div className={`absolute top-1 w-4 h-4 bg-white rounded-full transition-transform ${
-                  element.textTextureFillEnabled ? 'translate-x-7' : 'translate-x-1'
-                }`} />
+                <div className="flex items-center gap-2">
+                  <ImageIcon className="w-3.5 h-3.5 text-white" />
+                  <span className="text-sm text-white">Texture Fill</span>
+                </div>
+                {expandedSections.texture ? <ChevronDown className="w-3.5 h-3.5 text-white" /> : <ChevronRight className="w-3.5 h-3.5 text-white" />}
               </button>
-            </div>
 
-            {/* Upload Image */}
-            <div>
-              <label className="block text-xs text-gray-400 mb-1.5">Texture Image</label>
-              <input
-                ref={textureInputRef}
-                type="file"
-                accept="image/*"
-                onChange={handleTextureUpload}
-                className="hidden"
-              />
-              <div className="flex gap-2">
-                <button
-                  onClick={() => textureInputRef.current?.click()}
-                  className="flex-1 px-3 py-2 bg-blue-600 hover:bg-blue-700 rounded text-sm transition-colors flex items-center justify-center gap-2"
-                >
-                  <Upload className="w-4 h-4" />
-                  Upload Image
-                </button>
-                {element.textTextureFillImage && (
-                  <button
-                    onClick={() => onUpdate({ textTextureFillImage: undefined, textTextureFillEnabled: false })}
-                    className="px-3 py-2 bg-red-600/50 hover:bg-red-600 rounded text-sm transition-colors"
-                  >
-                    Remove
-                  </button>
-                )}
-              </div>
-            </div>
-
-            {/* Preview */}
-            {element.textTextureFillImage && (
-              <div>
-                <label className="block text-xs text-gray-400 mb-1.5">Preview</label>
-                <div className="w-full h-20 bg-gray-900 rounded border border-gray-700 overflow-hidden">
-                  <img
-                    src={element.textTextureFillImage}
-                    alt="Texture preview"
-                    className="w-full h-full object-cover"
-                  />
-                </div>
-              </div>
-            )}
-
-            {/* Scale */}
-            {element.textTextureFillEnabled && element.textTextureFillImage && (
-              <>
-                <div>
-                  <label className="block text-xs text-gray-400 mb-1.5">Scale (%)</label>
-                  <div className="flex gap-2 items-center">
-                    <input
-                      type="range"
-                      min="10"
-                      max="500"
-                      value={element.textTextureFillScale || 100}
-                      onChange={(e) => onUpdate({ textTextureFillScale: parseFloat(e.target.value) })}
-                      className="flex-1"
-                    />
-                    <input
-                      type="number"
-                      value={element.textTextureFillScale || 100}
-                      onChange={(e) => onUpdate({ textTextureFillScale: parseFloat(e.target.value) || 100 })}
-                      className="w-20 px-2 py-1 bg-gray-900 border border-gray-700 rounded text-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    />
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-2 gap-2">
-                  <div>
-                    <label className="block text-xs text-gray-400 mb-1.5">Offset X (px)</label>
-                    <input
-                      type="number"
-                      value={element.textTextureFillOffsetX || 0}
-                      onChange={(e) => onUpdate({ textTextureFillOffsetX: parseFloat(e.target.value) || 0 })}
-                      className="w-full px-2 py-1 bg-gray-900 border border-gray-700 rounded text-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-xs text-gray-400 mb-1.5">Offset Y (px)</label>
-                    <input
-                      type="number"
-                      value={element.textTextureFillOffsetY || 0}
-                      onChange={(e) => onUpdate({ textTextureFillOffsetY: parseFloat(e.target.value) || 0 })}
-                      className="w-full px-2 py-1 bg-gray-900 border border-gray-700 rounded text-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    />
-                  </div>
-                </div>
-              </>
-            )}
-          </div>
-        )}
-      </div>
-
-      {/* Pattern Fill Section */}
-      <div className="border border-gray-700 rounded-lg overflow-hidden">
-        <button
-          onClick={() => toggleSection('pattern')}
-          className="w-full flex items-center justify-between p-3 bg-gray-800 hover:bg-gray-750 transition-colors text-white"
-        >
-          <div className="flex items-center gap-2">
-            <svg className="w-4 h-4 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <rect x="3" y="3" width="7" height="7" rx="1" />
-              <rect x="14" y="3" width="7" height="7" rx="1" />
-              <rect x="3" y="14" width="7" height="7" rx="1" />
-              <rect x="14" y="14" width="7" height="7" rx="1" />
-            </svg>
-            <span className="font-medium text-white">Pattern Fill</span>
-          </div>
-          {expandedSections.pattern ? <ChevronDown className="w-4 h-4 text-white" /> : <ChevronRight className="w-4 h-4 text-white" />}
-        </button>
-
-        {expandedSections.pattern && (
-          <div className="p-3 bg-gray-800/50 space-y-3">
-            {/* Enable Toggle */}
-            <div className="flex items-center justify-between p-3 bg-gray-900 rounded">
-              <span className="text-sm">Enable Pattern Fill</span>
-              <button
-                onClick={() => {
-                  if (!element.textPatternFillEnabled) {
-                    onUpdate({
-                      textPatternFillEnabled: true,
-                      textPatternType: element.textPatternType || 'dots',
-                      textPatternColor: element.textPatternColor || '#FFFFFF',
-                      textPatternBackgroundColor: element.textPatternBackgroundColor || '#000000',
-                      textPatternSize: element.textPatternSize || 10,
-                      textPatternSpacing: element.textPatternSpacing || 5,
-                      textPatternAngle: element.textPatternAngle || 0
-                    });
-                  } else {
-                    onUpdate({ textPatternFillEnabled: false });
-                  }
-                }}
-                className={`w-12 h-6 rounded-full transition-colors relative ${
-                  element.textPatternFillEnabled ? 'bg-blue-600' : 'bg-gray-700'
-                }`}
-              >
-                <div className={`absolute top-1 w-4 h-4 bg-white rounded-full transition-transform ${
-                  element.textPatternFillEnabled ? 'translate-x-7' : 'translate-x-1'
-                }`} />
-              </button>
-            </div>
-
-            {element.textPatternFillEnabled && (
-              <>
-                {/* Pattern Type */}
-                <div>
-                  <label className="block text-xs text-gray-400 mb-1.5">Pattern Type</label>
-                  <div className="grid grid-cols-3 gap-2">
-                    {(['dots', 'lines', 'grid', 'diagonal', 'chevron'] as const).map(type => (
-                      <button
-                        key={type}
-                        onClick={() => onUpdate({ textPatternType: type })}
-                        className={`px-3 py-2 rounded text-xs transition-colors ${
-                          (element.textPatternType || 'dots') === type
-                            ? 'bg-blue-600 text-white'
-                            : 'bg-gray-900 text-gray-300 hover:bg-gray-800'
-                        }`}
-                      >
-                        {type.charAt(0).toUpperCase() + type.slice(1)}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-
-                {/* Pattern Color */}
-                <div>
-                  <label className="block text-xs text-gray-400 mb-1.5">Pattern Color</label>
-                  <div className="flex gap-2">
-                    <input
-                      type="color"
-                      value={element.textPatternColor || '#FFFFFF'}
-                      onChange={(e) => onUpdate({ textPatternColor: e.target.value })}
-                      className="w-12 h-10 bg-gray-900 border border-gray-700 rounded cursor-pointer"
-                    />
-                    <input
-                      type="text"
-                      value={element.textPatternColor || '#FFFFFF'}
-                      onChange={(e) => onUpdate({ textPatternColor: e.target.value })}
-                      className="flex-1 px-3 py-2 bg-gray-900 border border-gray-700 rounded text-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    />
-                  </div>
-                </div>
-
-                {/* Background Color */}
-                <div>
-                  <label className="block text-xs text-gray-400 mb-1.5">Background Color</label>
-                  <div className="flex gap-2">
-                    <input
-                      type="color"
-                      value={element.textPatternBackgroundColor || '#000000'}
-                      onChange={(e) => onUpdate({ textPatternBackgroundColor: e.target.value })}
-                      className="w-12 h-10 bg-gray-900 border border-gray-700 rounded cursor-pointer"
-                    />
-                    <input
-                      type="text"
-                      value={element.textPatternBackgroundColor || '#000000'}
-                      onChange={(e) => onUpdate({ textPatternBackgroundColor: e.target.value })}
-                      className="flex-1 px-3 py-2 bg-gray-900 border border-gray-700 rounded text-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    />
-                  </div>
-                </div>
-
-                {/* Size */}
-                <div>
-                  <label className="block text-xs text-gray-400 mb-1.5">Pattern Size (px)</label>
-                  <div className="flex gap-2 items-center">
-                    <input
-                      type="range"
-                      min="2"
-                      max="50"
-                      value={element.textPatternSize || 10}
-                      onChange={(e) => onUpdate({ textPatternSize: parseFloat(e.target.value) })}
-                      className="flex-1"
-                    />
-                    <input
-                      type="number"
-                      value={element.textPatternSize || 10}
-                      onChange={(e) => onUpdate({ textPatternSize: parseFloat(e.target.value) || 10 })}
-                      className="w-20 px-2 py-1 bg-gray-900 border border-gray-700 rounded text-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    />
-                  </div>
-                </div>
-
-                {/* Spacing */}
-                <div>
-                  <label className="block text-xs text-gray-400 mb-1.5">Pattern Spacing (px)</label>
-                  <div className="flex gap-2 items-center">
-                    <input
-                      type="range"
-                      min="0"
-                      max="50"
-                      value={element.textPatternSpacing || 5}
-                      onChange={(e) => onUpdate({ textPatternSpacing: parseFloat(e.target.value) })}
-                      className="flex-1"
-                    />
-                    <input
-                      type="number"
-                      value={element.textPatternSpacing || 5}
-                      onChange={(e) => onUpdate({ textPatternSpacing: parseFloat(e.target.value) || 5 })}
-                      className="w-20 px-2 py-1 bg-gray-900 border border-gray-700 rounded text-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    />
-                  </div>
-                </div>
-
-                {/* Angle */}
-                <div>
-                  <label className="block text-xs text-gray-400 mb-1.5">Pattern Angle (deg)</label>
-                  <div className="flex gap-2 items-center">
-                    <input
-                      type="range"
-                      min="0"
-                      max="360"
-                      value={element.textPatternAngle || 0}
-                      onChange={(e) => onUpdate({ textPatternAngle: parseFloat(e.target.value) })}
-                      className="flex-1"
-                    />
-                    <input
-                      type="number"
-                      value={element.textPatternAngle || 0}
-                      onChange={(e) => onUpdate({ textPatternAngle: parseFloat(e.target.value) || 0 })}
-                      className="w-20 px-2 py-1 bg-gray-900 border border-gray-700 rounded text-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    />
-                  </div>
-                </div>
-              </>
-            )}
-          </div>
-        )}
-      </div>
-
-      {/* Rich Text Section */}
-      <div className="border border-gray-700 rounded-lg overflow-hidden">
-        <button
-          onClick={() => toggleSection('richtext')}
-          className="w-full flex items-center justify-between p-3 bg-gray-800 hover:bg-gray-750 transition-colors text-white"
-        >
-          <div className="flex items-center gap-2">
-            <Type className="w-4 h-4 text-white" />
-            <span className="font-medium text-white">Rich Text</span>
-          </div>
-          {expandedSections.richtext ? <ChevronDown className="w-4 h-4 text-white" /> : <ChevronRight className="w-4 h-4 text-white" />}
-        </button>
-
-        {expandedSections.richtext && (
-          <div className="p-3 bg-gray-800/50 space-y-3">
-            {/* Enable Toggle */}
-            <div className="flex items-center justify-between p-3 bg-gray-900 rounded">
-              <span className="text-sm">Enable Rich Text</span>
-              <button
-                onClick={() => {
-                  if (!element.richTextEnabled) {
-                    convertToRichText();
-                  } else {
-                    onUpdate({ richTextEnabled: false });
-                  }
-                }}
-                className={`w-12 h-6 rounded-full transition-colors relative ${
-                  element.richTextEnabled ? 'bg-blue-600' : 'bg-gray-700'
-                }`}
-              >
-                <div className={`absolute top-1 w-4 h-4 bg-white rounded-full transition-transform ${
-                  element.richTextEnabled ? 'translate-x-7' : 'translate-x-1'
-                }`} />
-              </button>
-            </div>
-
-            {element.richTextEnabled && (
-              <>
-                <div className="p-2 bg-blue-500/10 border border-blue-500/30 rounded text-xs text-blue-300">
-                  Rich text mode allows different styles within the same text element. Each segment can have its own font, color, and styling.
-                </div>
-
-                {/* Segments */}
-                <div>
-                  <div className="flex items-center justify-between mb-2">
-                    <label className="block text-xs text-gray-400">Text Segments</label>
+              {expandedSections.texture && (
+                <div className="p-3 bg-gray-800/30 space-y-3">
+                  <div className="flex items-center justify-between p-3 bg-gray-900 rounded">
+                    <span className="text-sm">Enable Texture Fill</span>
                     <button
-                      onClick={addRichTextSegment}
-                      className="p-1 bg-blue-600 hover:bg-blue-700 rounded text-white transition-colors"
-                      title="Add segment"
+                      onClick={() => onUpdate({ textTextureFillEnabled: !element.textTextureFillEnabled })}
+                      className={`w-12 h-6 rounded-full transition-colors relative ${
+                        element.textTextureFillEnabled ? 'bg-blue-600' : 'bg-gray-700'
+                      }`}
                     >
-                      <Plus className="w-3 h-3" />
+                      <div className={`absolute top-1 w-4 h-4 bg-white rounded-full transition-transform ${
+                        element.textTextureFillEnabled ? 'translate-x-7' : 'translate-x-1'
+                      }`} />
                     </button>
                   </div>
 
-                  <div className="space-y-3">
-                    {(element.richTextSegments || []).map((segment, index) => (
-                      <div key={segment.id} className="p-3 bg-gray-900 rounded border border-gray-700 space-y-2">
-                        <div className="flex items-center justify-between">
-                          <span className="text-xs text-gray-400">Segment {index + 1}</span>
-                          {(element.richTextSegments || []).length > 1 && (
-                            <button
-                              onClick={() => removeRichTextSegment(segment.id)}
-                              className="p-1 bg-red-600/50 hover:bg-red-600 rounded text-white transition-colors"
-                              title="Remove segment"
-                            >
-                              <Trash2 className="w-3 h-3" />
-                            </button>
-                          )}
-                        </div>
+                  <div>
+                    <label className="block text-xs text-gray-400 mb-1.5">Texture Image</label>
+                    <input
+                      ref={textureInputRef}
+                      type="file"
+                      accept="image/*"
+                      onChange={handleTextureUpload}
+                      className="hidden"
+                    />
+                    <div className="flex gap-2">
+                      <button
+                        onClick={() => textureInputRef.current?.click()}
+                        className="flex-1 px-3 py-2 bg-blue-600 hover:bg-blue-700 rounded text-sm transition-colors flex items-center justify-center gap-2"
+                      >
+                        <Upload className="w-4 h-4" />
+                        Upload Image
+                      </button>
+                      {element.textTextureFillImage && (
+                        <button
+                          onClick={() => onUpdate({ textTextureFillImage: undefined, textTextureFillEnabled: false })}
+                          className="px-3 py-2 bg-red-600/50 hover:bg-red-600 rounded text-sm transition-colors"
+                        >
+                          Remove
+                        </button>
+                      )}
+                    </div>
+                  </div>
 
-                        {/* Text */}
-                        <div>
-                          <label className="block text-xs text-gray-500 mb-1">Text</label>
+                  {element.textTextureFillImage && (
+                    <div>
+                      <label className="block text-xs text-gray-400 mb-1.5">Preview</label>
+                      <div className="w-full h-20 bg-gray-900 rounded border border-gray-700 overflow-hidden">
+                        <img
+                          src={element.textTextureFillImage}
+                          alt="Texture preview"
+                          className="w-full h-full object-cover"
+                        />
+                      </div>
+                    </div>
+                  )}
+
+                  {element.textTextureFillEnabled && element.textTextureFillImage && (
+                    <>
+                      <div>
+                        <label className="block text-xs text-gray-400 mb-1.5">Scale (%)</label>
+                        <div className="flex gap-2 items-center">
                           <input
-                            type="text"
-                            value={segment.text}
-                            onChange={(e) => updateRichTextSegment(segment.id, { text: e.target.value })}
-                            className="w-full px-2 py-1 bg-gray-800 border border-gray-600 rounded text-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            type="range"
+                            min="10"
+                            max="500"
+                            value={element.textTextureFillScale || 100}
+                            onChange={(e) => onUpdate({ textTextureFillScale: parseFloat(e.target.value) })}
+                            className="flex-1"
+                          />
+                          <input
+                            type="number"
+                            value={element.textTextureFillScale || 100}
+                            onChange={(e) => onUpdate({ textTextureFillScale: parseFloat(e.target.value) || 100 })}
+                            className="w-20 px-2 py-1 bg-gray-900 border border-gray-700 rounded text-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                           />
                         </div>
+                      </div>
 
-                        {/* Font and Color */}
-                        <div className="grid grid-cols-2 gap-2">
-                          <div>
-                            <label className="block text-xs text-gray-500 mb-1">Font</label>
-                            <select
-                              value={segment.fontFamily || 'Inter'}
-                              onChange={(e) => updateRichTextSegment(segment.id, { fontFamily: e.target.value })}
-                              className="w-full px-2 py-1 bg-gray-800 border border-gray-600 rounded text-white text-xs focus:outline-none focus:ring-2 focus:ring-blue-500"
-                            >
-                              {allFonts.map(font => (
-                                <option key={font.family} value={font.family}>{font.family}</option>
-                              ))}
-                            </select>
-                          </div>
-                          <div>
-                            <label className="block text-xs text-gray-500 mb-1">Color</label>
-                            <input
-                              type="color"
-                              value={segment.color || '#FFFFFF'}
-                              onChange={(e) => updateRichTextSegment(segment.id, { color: e.target.value })}
-                              className="w-full h-7 bg-gray-800 border border-gray-600 rounded cursor-pointer"
-                            />
-                          </div>
+                      <div className="grid grid-cols-2 gap-2">
+                        <div>
+                          <label className="block text-xs text-gray-400 mb-1.5">Offset X (px)</label>
+                          <input
+                            type="number"
+                            value={element.textTextureFillOffsetX || 0}
+                            onChange={(e) => onUpdate({ textTextureFillOffsetX: parseFloat(e.target.value) || 0 })}
+                            className="w-full px-2 py-1 bg-gray-900 border border-gray-700 rounded text-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                          />
                         </div>
-
-                        {/* Size and Weight */}
-                        <div className="grid grid-cols-2 gap-2">
-                          <div>
-                            <label className="block text-xs text-gray-500 mb-1">Size</label>
-                            <input
-                              type="number"
-                              value={segment.fontSize || 16}
-                              onChange={(e) => updateRichTextSegment(segment.id, { fontSize: parseFloat(e.target.value) || 16 })}
-                              className="w-full px-2 py-1 bg-gray-800 border border-gray-600 rounded text-white text-xs focus:outline-none focus:ring-2 focus:ring-blue-500"
-                            />
-                          </div>
-                          <div>
-                            <label className="block text-xs text-gray-500 mb-1">Weight</label>
-                            <select
-                              value={segment.fontWeight || '400'}
-                              onChange={(e) => updateRichTextSegment(segment.id, { fontWeight: e.target.value })}
-                              className="w-full px-2 py-1 bg-gray-800 border border-gray-600 rounded text-white text-xs focus:outline-none focus:ring-2 focus:ring-blue-500"
-                            >
-                              {fontWeights.map(w => (
-                                <option key={w.value} value={w.value}>{w.label}</option>
-                              ))}
-                            </select>
-                          </div>
-                        </div>
-
-                        {/* Style and Decoration */}
-                        <div className="grid grid-cols-2 gap-2">
-                          <div>
-                            <label className="block text-xs text-gray-500 mb-1">Style</label>
-                            <select
-                              value={segment.fontStyle || 'normal'}
-                              onChange={(e) => updateRichTextSegment(segment.id, { fontStyle: e.target.value as any })}
-                              className="w-full px-2 py-1 bg-gray-800 border border-gray-600 rounded text-white text-xs focus:outline-none focus:ring-2 focus:ring-blue-500"
-                            >
-                              <option value="normal">Normal</option>
-                              <option value="italic">Italic</option>
-                              <option value="oblique">Oblique</option>
-                            </select>
-                          </div>
-                          <div>
-                            <label className="block text-xs text-gray-500 mb-1">Decoration</label>
-                            <select
-                              value={segment.textDecoration || 'none'}
-                              onChange={(e) => updateRichTextSegment(segment.id, { textDecoration: e.target.value as any })}
-                              className="w-full px-2 py-1 bg-gray-800 border border-gray-600 rounded text-white text-xs focus:outline-none focus:ring-2 focus:ring-blue-500"
-                            >
-                              <option value="none">None</option>
-                              <option value="underline">Underline</option>
-                              <option value="line-through">Strikethrough</option>
-                              <option value="overline">Overline</option>
-                            </select>
-                          </div>
+                        <div>
+                          <label className="block text-xs text-gray-400 mb-1.5">Offset Y (px)</label>
+                          <input
+                            type="number"
+                            value={element.textTextureFillOffsetY || 0}
+                            onChange={(e) => onUpdate({ textTextureFillOffsetY: parseFloat(e.target.value) || 0 })}
+                            className="w-full px-2 py-1 bg-gray-900 border border-gray-700 rounded text-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                          />
                         </div>
                       </div>
-                    ))}
-                  </div>
+                    </>
+                  )}
                 </div>
-              </>
-            )}
+              )}
+            </div>
+
+            {/* Pattern Fill Sub-section */}
+            <div className="border border-gray-600 rounded-lg overflow-hidden">
+              <button
+                onClick={() => toggleSection('pattern')}
+                className="w-full flex items-center justify-between p-2.5 bg-gray-700/50 hover:bg-gray-700 transition-colors text-white"
+              >
+                <div className="flex items-center gap-2">
+                  <svg className="w-3.5 h-3.5 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <rect x="3" y="3" width="7" height="7" rx="1" />
+                    <rect x="14" y="3" width="7" height="7" rx="1" />
+                    <rect x="3" y="14" width="7" height="7" rx="1" />
+                    <rect x="14" y="14" width="7" height="7" rx="1" />
+                  </svg>
+                  <span className="text-sm text-white">Pattern Fill</span>
+                </div>
+                {expandedSections.pattern ? <ChevronDown className="w-3.5 h-3.5 text-white" /> : <ChevronRight className="w-3.5 h-3.5 text-white" />}
+              </button>
+
+              {expandedSections.pattern && (
+                <div className="p-3 bg-gray-800/30 space-y-3">
+                  <div className="flex items-center justify-between p-3 bg-gray-900 rounded">
+                    <span className="text-sm">Enable Pattern Fill</span>
+                    <button
+                      onClick={() => {
+                        if (!element.textPatternFillEnabled) {
+                          onUpdate({
+                            textPatternFillEnabled: true,
+                            textPatternType: element.textPatternType || 'dots',
+                            textPatternColor: element.textPatternColor || '#FFFFFF',
+                            textPatternBackgroundColor: element.textPatternBackgroundColor || '#000000',
+                            textPatternSize: element.textPatternSize || 10,
+                            textPatternSpacing: element.textPatternSpacing || 5,
+                            textPatternAngle: element.textPatternAngle || 0
+                          });
+                        } else {
+                          onUpdate({ textPatternFillEnabled: false });
+                        }
+                      }}
+                      className={`w-12 h-6 rounded-full transition-colors relative ${
+                        element.textPatternFillEnabled ? 'bg-blue-600' : 'bg-gray-700'
+                      }`}
+                    >
+                      <div className={`absolute top-1 w-4 h-4 bg-white rounded-full transition-transform ${
+                        element.textPatternFillEnabled ? 'translate-x-7' : 'translate-x-1'
+                      }`} />
+                    </button>
+                  </div>
+
+                  {element.textPatternFillEnabled && (
+                    <>
+                      <div>
+                        <label className="block text-xs text-gray-400 mb-1.5">Pattern Type</label>
+                        <div className="grid grid-cols-3 gap-2">
+                          {(['dots', 'lines', 'grid', 'diagonal', 'chevron'] as const).map(type => (
+                            <button
+                              key={type}
+                              onClick={() => onUpdate({ textPatternType: type })}
+                              className={`px-3 py-2 rounded text-xs transition-colors ${
+                                (element.textPatternType || 'dots') === type
+                                  ? 'bg-blue-600 text-white'
+                                  : 'bg-gray-900 text-gray-300 hover:bg-gray-800'
+                              }`}
+                            >
+                              {type.charAt(0).toUpperCase() + type.slice(1)}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+
+                      <div>
+                        <label className="block text-xs text-gray-400 mb-1.5">Pattern Color</label>
+                        <div className="flex gap-2">
+                          <input
+                            type="color"
+                            value={element.textPatternColor || '#FFFFFF'}
+                            onChange={(e) => onUpdate({ textPatternColor: e.target.value })}
+                            className="w-12 h-10 bg-gray-900 border border-gray-700 rounded cursor-pointer"
+                          />
+                          <input
+                            type="text"
+                            value={element.textPatternColor || '#FFFFFF'}
+                            onChange={(e) => onUpdate({ textPatternColor: e.target.value })}
+                            className="flex-1 px-3 py-2 bg-gray-900 border border-gray-700 rounded text-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                          />
+                        </div>
+                      </div>
+
+                      <div>
+                        <label className="block text-xs text-gray-400 mb-1.5">Background Color</label>
+                        <div className="flex gap-2">
+                          <input
+                            type="color"
+                            value={element.textPatternBackgroundColor || '#000000'}
+                            onChange={(e) => onUpdate({ textPatternBackgroundColor: e.target.value })}
+                            className="w-12 h-10 bg-gray-900 border border-gray-700 rounded cursor-pointer"
+                          />
+                          <input
+                            type="text"
+                            value={element.textPatternBackgroundColor || '#000000'}
+                            onChange={(e) => onUpdate({ textPatternBackgroundColor: e.target.value })}
+                            className="flex-1 px-3 py-2 bg-gray-900 border border-gray-700 rounded text-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                          />
+                        </div>
+                      </div>
+
+                      <div>
+                        <label className="block text-xs text-gray-400 mb-1.5">Pattern Size (px)</label>
+                        <div className="flex gap-2 items-center">
+                          <input
+                            type="range"
+                            min="2"
+                            max="50"
+                            value={element.textPatternSize || 10}
+                            onChange={(e) => onUpdate({ textPatternSize: parseFloat(e.target.value) })}
+                            className="flex-1"
+                          />
+                          <input
+                            type="number"
+                            value={element.textPatternSize || 10}
+                            onChange={(e) => onUpdate({ textPatternSize: parseFloat(e.target.value) || 10 })}
+                            className="w-20 px-2 py-1 bg-gray-900 border border-gray-700 rounded text-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                          />
+                        </div>
+                      </div>
+
+                      <div>
+                        <label className="block text-xs text-gray-400 mb-1.5">Pattern Spacing (px)</label>
+                        <div className="flex gap-2 items-center">
+                          <input
+                            type="range"
+                            min="0"
+                            max="50"
+                            value={element.textPatternSpacing || 5}
+                            onChange={(e) => onUpdate({ textPatternSpacing: parseFloat(e.target.value) })}
+                            className="flex-1"
+                          />
+                          <input
+                            type="number"
+                            value={element.textPatternSpacing || 5}
+                            onChange={(e) => onUpdate({ textPatternSpacing: parseFloat(e.target.value) || 5 })}
+                            className="w-20 px-2 py-1 bg-gray-900 border border-gray-700 rounded text-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                          />
+                        </div>
+                      </div>
+
+                      <div>
+                        <label className="block text-xs text-gray-400 mb-1.5">Pattern Angle (deg)</label>
+                        <div className="flex gap-2 items-center">
+                          <input
+                            type="range"
+                            min="0"
+                            max="360"
+                            value={element.textPatternAngle || 0}
+                            onChange={(e) => onUpdate({ textPatternAngle: parseFloat(e.target.value) })}
+                            className="flex-1"
+                          />
+                          <input
+                            type="number"
+                            value={element.textPatternAngle || 0}
+                            onChange={(e) => onUpdate({ textPatternAngle: parseFloat(e.target.value) || 0 })}
+                            className="w-20 px-2 py-1 bg-gray-900 border border-gray-700 rounded text-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                          />
+                        </div>
+                      </div>
+                    </>
+                  )}
+                </div>
+              )}
+            </div>
           </div>
         )}
       </div>
+
 
       {/* Stroke Section */}
       <div className="border border-gray-700 rounded-lg overflow-hidden">
@@ -1104,7 +921,7 @@ const AdvancedTextSettingsPanel: React.FC<AdvancedTextSettingsPanelProps> = ({
         )}
       </div>
 
-      {/* Shadow Section */}
+      {/* Shadow & Glow Section */}
       <div className="border border-gray-700 rounded-lg overflow-hidden">
         <button
           onClick={() => toggleSection('shadow')}
@@ -1112,14 +929,15 @@ const AdvancedTextSettingsPanel: React.FC<AdvancedTextSettingsPanelProps> = ({
         >
           <div className="flex items-center gap-2">
             <Sparkles className="w-4 h-4 text-white" />
-            <span className="font-medium text-white">Text Shadow</span>
+            <span className="font-medium text-white">Shadow & Glow</span>
           </div>
           {expandedSections.shadow ? <ChevronDown className="w-4 h-4 text-white" /> : <ChevronRight className="w-4 h-4 text-white" />}
         </button>
 
         {expandedSections.shadow && (
           <div className="p-3 bg-gray-800/50 space-y-3">
-            {/* Shadow Color */}
+            <p className="text-xs font-medium text-gray-300">Shadow</p>
+
             <div>
               <label className="block text-xs text-gray-400 mb-1.5">Shadow Color</label>
               <div className="flex gap-2">
@@ -1139,7 +957,6 @@ const AdvancedTextSettingsPanel: React.FC<AdvancedTextSettingsPanelProps> = ({
               </div>
             </div>
 
-            {/* Shadow Offset X */}
             <div>
               <label className="block text-xs text-gray-400 mb-1.5">Horizontal Offset (px)</label>
               <div className="flex gap-2 items-center">
@@ -1160,7 +977,6 @@ const AdvancedTextSettingsPanel: React.FC<AdvancedTextSettingsPanelProps> = ({
               </div>
             </div>
 
-            {/* Shadow Offset Y */}
             <div>
               <label className="block text-xs text-gray-400 mb-1.5">Vertical Offset (px)</label>
               <div className="flex gap-2 items-center">
@@ -1181,7 +997,6 @@ const AdvancedTextSettingsPanel: React.FC<AdvancedTextSettingsPanelProps> = ({
               </div>
             </div>
 
-            {/* Shadow Blur */}
             <div>
               <label className="block text-xs text-gray-400 mb-1.5">Blur Radius (px)</label>
               <div className="flex gap-2 items-center">
@@ -1202,91 +1017,74 @@ const AdvancedTextSettingsPanel: React.FC<AdvancedTextSettingsPanelProps> = ({
               </div>
             </div>
 
-          </div>
-        )}
-      </div>
+            <div className="border-t border-gray-700 pt-3">
+              <p className="text-xs font-medium text-gray-300 mb-3">Glow</p>
 
-      {/* Glow Section */}
-      <div className="border border-gray-700 rounded-lg overflow-hidden">
-        <button
-          onClick={() => toggleSection('glow')}
-          className="w-full flex items-center justify-between p-3 bg-gray-800 hover:bg-gray-750 transition-colors text-white"
-        >
-          <div className="flex items-center gap-2">
-            <Sparkles className="w-4 h-4 text-white" />
-            <span className="font-medium text-white">Text Glow / Outer Glow</span>
-          </div>
-          {expandedSections.glow ? <ChevronDown className="w-4 h-4 text-white" /> : <ChevronRight className="w-4 h-4 text-white" />}
-        </button>
+              <div className="space-y-3">
+                <div>
+                  <label className="block text-xs text-gray-400 mb-1.5">Glow Color</label>
+                  <div className="flex gap-2">
+                    <input
+                      type="color"
+                      value={element.textGlowColor || '#FFFFFF'}
+                      onChange={(e) => onUpdate({ textGlowColor: e.target.value })}
+                      className="w-12 h-10 bg-gray-900 border border-gray-700 rounded cursor-pointer"
+                    />
+                    <input
+                      type="text"
+                      value={element.textGlowColor || '#FFFFFF'}
+                      onChange={(e) => onUpdate({ textGlowColor: e.target.value })}
+                      className="flex-1 px-3 py-2 bg-gray-900 border border-gray-700 rounded text-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      placeholder="#FFFFFF"
+                    />
+                  </div>
+                </div>
 
-        {expandedSections.glow && (
-          <div className="p-3 bg-gray-800/50 space-y-3">
-            {/* Glow Color */}
-            <div>
-              <label className="block text-xs text-gray-400 mb-1.5">Glow Color</label>
-              <div className="flex gap-2">
-                <input
-                  type="color"
-                  value={element.textGlowColor || '#FFFFFF'}
-                  onChange={(e) => onUpdate({ textGlowColor: e.target.value })}
-                  className="w-12 h-10 bg-gray-900 border border-gray-700 rounded cursor-pointer"
-                />
-                <input
-                  type="text"
-                  value={element.textGlowColor || '#FFFFFF'}
-                  onChange={(e) => onUpdate({ textGlowColor: e.target.value })}
-                  className="flex-1 px-3 py-2 bg-gray-900 border border-gray-700 rounded text-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  placeholder="#FFFFFF"
-                />
+                <div>
+                  <label className="block text-xs text-gray-400 mb-1.5">Glow Size (px)</label>
+                  <div className="flex gap-2 items-center">
+                    <input
+                      type="range"
+                      min="0"
+                      max="100"
+                      value={element.textGlowSize || 0}
+                      onChange={(e) => onUpdate({ textGlowSize: parseFloat(e.target.value) })}
+                      className="flex-1"
+                    />
+                    <input
+                      type="number"
+                      value={element.textGlowSize || 0}
+                      onChange={(e) => onUpdate({ textGlowSize: parseFloat(e.target.value) || 0 })}
+                      className="w-20 px-2 py-1 bg-gray-900 border border-gray-700 rounded text-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-xs text-gray-400 mb-1.5">Glow Intensity</label>
+                  <div className="flex gap-2 items-center">
+                    <input
+                      type="range"
+                      min="0"
+                      max="1"
+                      step="0.1"
+                      value={element.textGlowIntensity || 0}
+                      onChange={(e) => onUpdate({ textGlowIntensity: parseFloat(e.target.value) })}
+                      className="flex-1"
+                    />
+                    <input
+                      type="number"
+                      value={element.textGlowIntensity || 0}
+                      onChange={(e) => onUpdate({ textGlowIntensity: parseFloat(e.target.value) || 0 })}
+                      className="w-20 px-2 py-1 bg-gray-900 border border-gray-700 rounded text-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      step="0.1"
+                      min="0"
+                      max="1"
+                    />
+                  </div>
+                </div>
               </div>
             </div>
-
-            {/* Glow Size */}
-            <div>
-              <label className="block text-xs text-gray-400 mb-1.5">Glow Size (px)</label>
-              <div className="flex gap-2 items-center">
-                <input
-                  type="range"
-                  min="0"
-                  max="100"
-                  value={element.textGlowSize || 0}
-                  onChange={(e) => onUpdate({ textGlowSize: parseFloat(e.target.value) })}
-                  className="flex-1"
-                />
-                <input
-                  type="number"
-                  value={element.textGlowSize || 0}
-                  onChange={(e) => onUpdate({ textGlowSize: parseFloat(e.target.value) || 0 })}
-                  className="w-20 px-2 py-1 bg-gray-900 border border-gray-700 rounded text-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
-              </div>
-            </div>
-
-            {/* Glow Intensity */}
-            <div>
-              <label className="block text-xs text-gray-400 mb-1.5">Glow Intensity</label>
-              <div className="flex gap-2 items-center">
-                <input
-                  type="range"
-                  min="0"
-                  max="1"
-                  step="0.1"
-                  value={element.textGlowIntensity || 0}
-                  onChange={(e) => onUpdate({ textGlowIntensity: parseFloat(e.target.value) })}
-                  className="flex-1"
-                />
-                <input
-                  type="number"
-                  value={element.textGlowIntensity || 0}
-                  onChange={(e) => onUpdate({ textGlowIntensity: parseFloat(e.target.value) || 0 })}
-                  className="w-20 px-2 py-1 bg-gray-900 border border-gray-700 rounded text-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  step="0.1"
-                  min="0"
-                  max="1"
-                />
-              </div>
-            </div>
-
           </div>
         )}
       </div>
@@ -1563,69 +1361,6 @@ const AdvancedTextSettingsPanel: React.FC<AdvancedTextSettingsPanelProps> = ({
         )}
       </div>
 
-      {/* Advanced Features (Not Yet Implemented) */}
-      <div className="border border-gray-700 rounded-lg overflow-hidden">
-        <button
-          onClick={() => toggleSection('advanced')}
-          className="w-full flex items-center justify-between p-3 bg-gray-800 hover:bg-gray-750 transition-colors text-white"
-        >
-          <div className="flex items-center gap-2">
-            <Info className="w-4 h-4 text-white" />
-            <span className="font-medium text-white">Advanced Features (Coming Soon)</span>
-          </div>
-          {expandedSections.advanced ? <ChevronDown className="w-4 h-4 text-white" /> : <ChevronRight className="w-4 h-4 text-white" />}
-        </button>
-
-        {expandedSections.advanced && (
-          <div className="p-3 bg-gray-800/50 space-y-2 text-xs text-gray-400">
-            {/* Implemented Features */}
-            <div className="p-3 bg-green-500/10 border border-green-500/30 rounded mb-3">
-              <p className="font-medium text-green-400 mb-2">Implemented Features:</p>
-              <div className="space-y-1 pl-3 text-green-300/80">
-                <p>• Gradient Text Fill (linear & radial)</p>
-                <p>• Texture Fill (image-based)</p>
-                <p>• Pattern Fill (dots, lines, grid, diagonal, chevron)</p>
-                <p>• Rich Text (multi-style segments)</p>
-                <p>• Text Stroke/Outline</p>
-                <p>• Text Shadow</p>
-                <p>• Text Glow</p>
-                <p>• Baseline Shift</p>
-              </div>
-            </div>
-
-            <p className="font-medium text-gray-300 mb-2">Future features (not yet implemented):</p>
-
-            <div className="space-y-1.5 pl-3">
-              <p>• <span className="text-gray-300">Variable Font Axes:</span> Fine control over weight, width, slant, optical size</p>
-              <p>• <span className="text-gray-300">Kerning:</span> Manual per-character kerning adjustments</p>
-              <p>• <span className="text-gray-300">Animated Gradients:</span> Color cycling and gradient animations</p>
-              <p>• <span className="text-gray-300">Reflection/Mirror:</span> Vertical/horizontal reflections with fade</p>
-              <p>• <span className="text-gray-300">3D Extrusion:</span> Depth, rotation, lighting for 3D text</p>
-              <p>• <span className="text-gray-300">Text Masking:</span> Masking images or video behind text</p>
-              <p>• <span className="text-gray-300">Animated Effects:</span> Wave, bounce, shake, typewriter effects</p>
-              <p>• <span className="text-gray-300">Distortion/Warping:</span> Arc, bulge, shear, perspective transforms</p>
-              <p>• <span className="text-gray-300">Stroke Animation:</span> Animate stroke drawing and color cycling</p>
-              <p>• <span className="text-gray-300">Path Text:</span> Text following curves, circles, or custom paths</p>
-              <p>• <span className="text-gray-300">Multi-column Text:</span> Column count and gutter control</p>
-              <p>• <span className="text-gray-300">Dynamic Content:</span> Variables (date, username, score)</p>
-              <p>• <span className="text-gray-300">Responsive Sizing:</span> Auto-scale with canvas/screen size</p>
-              <p>• <span className="text-gray-300">Layer Blending:</span> Multiply, overlay, screen, difference modes</p>
-            </div>
-
-            <div className="mt-4 p-3 bg-gray-900/50 rounded border border-gray-700">
-              <p className="text-yellow-500 font-medium mb-1">Implementation Notes:</p>
-              <p className="text-gray-400">These future features require:</p>
-              <ul className="list-disc list-inside text-gray-400 mt-1 space-y-0.5">
-                <li>Canvas 2D or WebGL rendering engine</li>
-                <li>Animation timeline integration</li>
-                <li>Custom shader programs (for 3D/effects)</li>
-                <li>SVG path utilities (for path text)</li>
-                <li>Rich text editor component</li>
-              </ul>
-            </div>
-          </div>
-        )}
-      </div>
           </div>
         ) : (
           <div className="p-4 space-y-4">
