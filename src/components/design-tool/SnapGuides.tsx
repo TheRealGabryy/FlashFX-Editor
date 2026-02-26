@@ -14,7 +14,7 @@ const SnapGuides: React.FC<SnapGuidesProps> = ({ guides }) => {
       {guides.map((guide) => {
         const isCanvasCenter = guide.snapType === 'canvas-center';
         const color = isCanvasCenter ? '#EF4444' : guide.color;
-        const lineThickness = 1;
+        const lineThickness = 2;
 
         if (guide.type === 'vertical') {
           const lineHeight = guide.endPos - guide.startPos;
