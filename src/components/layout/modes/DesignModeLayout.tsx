@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useEffect } from 'react';
+import React, { useState, useCallback, useEffect, useRef } from 'react';
 import HorizontalShapesBar from '../HorizontalShapesBar';
 import LayersPanel from '../../design-tool/LayersPanel';
 import Canvas from '../../design-tool/Canvas';
@@ -20,7 +20,7 @@ import TutorialOverlay from '../../tutorial/TutorialOverlay';
 import TutorialWelcomeModal from '../../tutorial/TutorialWelcomeModal';
 import { useTutorial } from '../../../contexts/TutorialContext';
 import { Preset } from '../../../types/preset';
-import { SequenceCompositor } from '../../sequence';
+import CreateSequenceModal from '../../sequence/CreateSequenceModal';
 
 interface DesignModeLayoutProps {
   // Mode state
@@ -181,6 +181,8 @@ const DesignModeLayout: React.FC<DesignModeLayoutProps> = ({
   const [isPropertiesPanelCollapsed, setIsPropertiesPanelCollapsed] = useState(false);
   const [showExitConfirmModal, setShowExitConfirmModal] = useState(false);
   const [showAdvancedConfirm, setShowAdvancedConfirm] = useState(false);
+  const [showAutoSequenceModal, setShowAutoSequenceModal] = useState(false);
+  const prevModeRef = useRef<LayoutMode>(currentMode);
 
   const [leftColumnWidth, setLeftColumnWidth] = useState(25);
   const [rightColumnWidth, setRightColumnWidth] = useState(25);
@@ -299,6 +301,14 @@ const DesignModeLayout: React.FC<DesignModeLayoutProps> = ({
       setPan(designModePan);
     }
   }, [currentMode, leftColumnWidth, rightColumnWidth, topRowHeight, canvasSize.width, canvasSize.height, setZoom, setPan]);
+
+  useEffect(() => {
+    const prevMode = prevModeRef.current;
+    prevModeRef.current = currentMode;
+    if (currentMode === 'edit' && prevMode !== 'edit' && !activeSequence) {
+      setShowAutoSequenceModal(true);
+    }
+  }, [currentMode, activeSequence]);
 
   // Sync canvas selection to timeline clip selection
   useEffect(() => {
@@ -575,12 +585,12 @@ const DesignModeLayout: React.FC<DesignModeLayoutProps> = ({
               </div>
             ) : (
               <div className="h-full flex items-center justify-center bg-gray-900/50">
-                <SequenceCompositor
-                  activeSequence={null}
-                  onCreateSequence={handleCreateSequence}
-                  onEditSequence={handleEditSequence}
-                  canvasId="current-canvas"
-                />
+                <button
+                  onClick={() => setShowAutoSequenceModal(true)}
+                  className="flex items-center gap-2 px-4 py-2 text-sm text-gray-500 hover:text-gray-300 border border-gray-700/50 hover:border-gray-600 rounded-lg transition-all duration-200 bg-gray-800/30 hover:bg-gray-800/60"
+                >
+                  <span>+ New Sequence</span>
+                </button>
               </div>
             )}
           </div>
@@ -627,6 +637,16 @@ const DesignModeLayout: React.FC<DesignModeLayoutProps> = ({
           setMode('advanced');
         }}
         onCancel={() => setShowAdvancedConfirm(false)}
+      />
+
+      {/* Auto-triggered sequence creation modal */}
+      <CreateSequenceModal
+        isOpen={showAutoSequenceModal}
+        onClose={() => setShowAutoSequenceModal(false)}
+        onCreate={(name, frameRate, duration) => {
+          createSequence(name, frameRate, duration, 'current-canvas');
+          setShowAutoSequenceModal(false);
+        }}
       />
     </div>
   );
