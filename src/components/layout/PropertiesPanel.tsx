@@ -1,5 +1,5 @@
 import React from 'react';
-import { Settings, Type, ChevronDown, Play, Minus, Image, ChevronRight, Pencil, Zap } from 'lucide-react';
+import { Settings, Play, Minus, Image, ChevronRight, Pencil, Zap } from 'lucide-react';
 import { DesignElement } from '../../types/design';
 import { BackgroundConfig } from '../../types/background';
 import ShapePropertiesTab from './ShapePropertiesTab';
@@ -42,12 +42,7 @@ const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
   canvasSize = { width: 3840, height: 2160 }
 }) => {
   const [autoContentType, setAutoContentType] = React.useState<'shape' | 'text' | 'line' | 'image'>('shape');
-  const [showTextSettings, setShowTextSettings] = React.useState(false);
-  
-  const hasTextElements = selectedElements.some(el => 
-    el.type === 'text' || el.type === 'button' || el.type === 'chat-bubble'
-  );
-  
+
   const hasLineElements = selectedElements.some(el =>
     el.type === 'line'
   );
@@ -177,23 +172,6 @@ const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
           </button>
         </div>
 
-        {/* Show Text Settings Button */}
-        {hasTextElements && (
-          <button
-            onClick={() => setShowTextSettings(!showTextSettings)}
-            className={`w-full mt-1.5 px-2 py-1 rounded text-xs font-medium transition-all duration-200 ${
-              showTextSettings
-                ? 'bg-yellow-400/20 text-yellow-400 border border-yellow-400/50'
-                : 'bg-gray-700/50 text-gray-300 hover:bg-gray-600/50'
-            }`}
-          >
-            <div className="flex items-center justify-center space-x-1">
-              <Type className="w-2.5 h-2.5" />
-              <span>Text Settings</span>
-              <ChevronDown className={`w-2.5 h-2.5 transition-transform ${showTextSettings ? 'rotate-180' : ''}`} />
-            </div>
-          </button>
-        )}
       </div>
 
       {/* Tab Content */}
@@ -215,8 +193,6 @@ const PropertiesPanel: React.FC<PropertiesPanelProps> = ({
                   el.type === 'text' || el.type === 'button' || el.type === 'chat-bubble'
                 )}
                 updateElement={updateElement}
-                showAdvanced={showTextSettings}
-                setShowAdvanced={setShowTextSettings}
                 onApplyTextAnimationControl={onApplyTextAnimationControl}
               />
             ) : autoContentType === 'line' ? (

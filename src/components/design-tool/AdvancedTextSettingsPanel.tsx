@@ -1,6 +1,6 @@
 import React, { useState, useCallback, useRef } from 'react';
 import { DesignElement } from '../../types/design';
-import { ChevronDown, ChevronRight, Type, Palette, Sparkles, Layout, Info, Upload, Plus, Trash2, Image as ImageIcon } from 'lucide-react';
+import { ChevronDown, ChevronRight, Type, Palette, Sparkles, Layout, Upload, Plus, Trash2, Image as ImageIcon } from 'lucide-react';
 import { useFonts } from '../../hooks/useFonts';
 import { v4 as uuidv4 } from 'uuid';
 
@@ -200,18 +200,6 @@ const AdvancedTextSettingsPanel: React.FC<AdvancedTextSettingsPanelProps> = ({
       <div className="flex-1 overflow-y-auto custom-scrollbar">
         {activeSubtab === 'styling' ? (
           <div className="space-y-2 text-sm p-3">
-            <div className="bg-blue-500/10 border border-blue-500/30 rounded-lg p-3 mb-4">
-              <div className="flex items-start gap-2 text-blue-300 text-xs">
-                <Info className="w-4 h-4 flex-shrink-0 mt-0.5" />
-                <div>
-                  <p className="font-medium mb-1">Advanced Text Panel</p>
-                  <p className="text-blue-300/70">
-                    This panel provides professional-grade text controls. Some features marked with a note require additional implementation.
-                  </p>
-                </div>
-              </div>
-            </div>
-
             {/* Typography Section */}
       <div className="border border-gray-700 rounded-lg overflow-hidden">
         <button
