@@ -322,13 +322,15 @@ const Canvas: React.FC<CanvasProps> = ({
   }, [canvasWidth, canvasHeight]);
 
   const getCanvasCoordinates = useCallback((clientX: number, clientY: number) => {
-    const container = containerRef.current;
-    if (!container) return { x: 0, y: 0 };
-    const rect = container.getBoundingClientRect();
-    const canvasX = (clientX - rect.left - pan.x) / zoom;
-    const canvasY = (clientY - rect.top - pan.y) / zoom;
+    const artboard = artboardRef.current;
+    if (!artboard) return { x: 0, y: 0 };
+    const rect = artboard.getBoundingClientRect();
+    const scaleX = rect.width / canvasWidth;
+    const scaleY = rect.height / canvasHeight;
+    const canvasX = (clientX - rect.left) / scaleX;
+    const canvasY = (clientY - rect.top) / scaleY;
     return { x: canvasX, y: canvasY };
-  }, [pan.x, pan.y, zoom]);
+  }, [canvasWidth, canvasHeight]);
 
   const finalizeDrawnLine = useCallback((absPoints: { x: number; y: number }[], toolType: 'line' | 'pen') => {
     if (absPoints.length < 2) return;
@@ -513,9 +515,14 @@ const Canvas: React.FC<CanvasProps> = ({
 
   const handleMouseMove = useCallback((e: React.MouseEvent) => {
     if (isShapePlacementTool(activeTool)) {
-      const rect = containerRef.current?.getBoundingClientRect();
-      if (rect) {
-        setShapeCursorContainerPos({ x: e.clientX - rect.left, y: e.clientY - rect.top });
+      const container = containerRef.current;
+      if (container) {
+        const rect = container.getBoundingClientRect();
+        const cssZoom = rect.width / container.offsetWidth;
+        setShapeCursorContainerPos({
+          x: (e.clientX - rect.left) / cssZoom,
+          y: (e.clientY - rect.top) / cssZoom
+        });
       }
       return;
     }
@@ -958,17 +965,21 @@ const Canvas: React.FC<CanvasProps> = ({
               }}
               onClick={(e) => {
                 e.stopPropagation();
-                const canvasX = e.nativeEvent.offsetX;
-                const canvasY = e.nativeEvent.offsetY;
+                const { x: canvasX, y: canvasY } = getCanvasCoordinates(e.clientX, e.clientY);
                 const element = createShapeAtPosition(activeTool as DesignElement['type'], canvasX, canvasY);
                 onAddElement?.(element);
                 setShapeCursorContainerPos(null);
                 onSetActiveTool?.('select');
               }}
               onMouseMove={(e) => {
-                const rect = containerRef.current?.getBoundingClientRect();
-                if (rect) {
-                  setShapeCursorContainerPos({ x: e.clientX - rect.left, y: e.clientY - rect.top });
+                const container = containerRef.current;
+                if (container) {
+                  const rect = container.getBoundingClientRect();
+                  const cssZoom = rect.width / container.offsetWidth;
+                  setShapeCursorContainerPos({
+                    x: (e.clientX - rect.left) / cssZoom,
+                    y: (e.clientY - rect.top) / cssZoom
+                  });
                 }
               }}
               onMouseLeave={() => setShapeCursorContainerPos(null)}
