@@ -179,3 +179,94 @@ export const createShapeAtCenter = (
 
   return baseElement;
 };
+
+/**
+ * Create a new shape centered at a specific canvas coordinate
+ */
+export const createShapeAtPosition = (
+  type: DesignElement['type'],
+  canvasX: number,
+  canvasY: number,
+  customProps?: Partial<DesignElement>
+): DesignElement => {
+  const dimensions = getShapeDimensions(type);
+  const x = canvasX - dimensions.width / 2;
+  const y = canvasY - dimensions.height / 2;
+
+  const defaultsKey = mapShapeTypeToDefaultsKey(type);
+  const defaults = defaultsKey ? shapeDefaultsService.getShapeDefaults(defaultsKey) : {};
+  const defaultColor = (defaults as any).material?.color || (defaults as any).fill || '#3B82F6';
+
+  const baseElement: DesignElement = {
+    id: Date.now().toString(),
+    type,
+    name: type.charAt(0).toUpperCase() + type.slice(1),
+    x,
+    y,
+    width: dimensions.width,
+    height: dimensions.height,
+    rotation: 0,
+    locked: false,
+    visible: true,
+    ...defaults,
+    materialConfig: createSolidColorMaterialConfig(defaultColor),
+    ...customProps
+  };
+
+  if (type === 'line') {
+    return {
+      ...baseElement,
+      cornerRadius: 0,
+      pointCornerRadii: [],
+      points: [
+        { x: 0, y: 0, radius: 0 },
+        { x: 300, y: 0, radius: 0 }
+      ],
+      trimStart: 0,
+      trimEnd: 1,
+      closePath: false,
+      autoScaleArrows: false
+    };
+  }
+
+  if (type === 'star') {
+    return {
+      starPoints: 5,
+      starInnerRadius: 50,
+      ...baseElement
+    };
+  }
+
+  if (type === 'gradient') {
+    return {
+      gradientEnabled: true,
+      gradientType: 'linear',
+      gradientAngle: 45,
+      gradientCenterX: 50,
+      gradientCenterY: 50,
+      ...baseElement
+    };
+  }
+
+  if (type === 'adjustment-layer') {
+    return {
+      adjustmentType: 'brightness-contrast',
+      adjustmentIntensity: 50,
+      blendMode: 'normal',
+      ...baseElement
+    };
+  }
+
+  if (type === 'svg') {
+    return {
+      svgData: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/></svg>',
+      svgViewBox: '0 0 24 24',
+      svgPreserveAspectRatio: 'xMidYMid meet',
+      svgFillColor: '#3B82F6',
+      svgStrokeColor: '#1E40AF',
+      ...baseElement
+    };
+  }
+
+  return baseElement;
+};

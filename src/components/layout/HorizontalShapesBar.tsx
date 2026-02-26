@@ -34,8 +34,8 @@ interface HorizontalShapesBarProps {
   currentMode?: LayoutMode;
   onModeChange?: (mode: LayoutMode) => void;
   isTransitioning?: boolean;
-  activeTool?: 'select' | 'line' | 'pen';
-  onSetActiveTool?: (tool: 'select' | 'line' | 'pen') => void;
+  activeTool?: string;
+  onSetActiveTool?: (tool: string) => void;
 }
 
 const HorizontalShapesBar: React.FC<HorizontalShapesBarProps> = ({
@@ -70,17 +70,12 @@ const HorizontalShapesBar: React.FC<HorizontalShapesBarProps> = ({
   const [showImageMenu, setShowImageMenu] = useState(false);
   const [showGoogleSearch, setShowGoogleSearch] = useState(false);
   const [showDalleGenerate, setShowDalleGenerate] = useState(false);
-  const createShape = (type: DesignElement['type']) => {
-    const element = createShapeAtCenter(type, canvasSize, viewport);
-    onAddElement(element);
-  };
-
   const tools = [
-    { icon: Square, label: 'Rectangle', action: () => createShape('rectangle') },
-    { icon: Circle, label: 'Circle', action: () => createShape('circle') },
-    { icon: Type, label: 'Text', action: () => createShape('text') },
-    { icon: MessageCircle, label: 'Chat Bubble', action: () => createShape('chat-bubble') },
-    { icon: Smartphone, label: 'Chat Frame', action: () => createShape('chat-frame') }
+    { icon: Square, label: 'Rectangle', type: 'rectangle' as DesignElement['type'] },
+    { icon: Circle, label: 'Circle', type: 'circle' as DesignElement['type'] },
+    { icon: Type, label: 'Text', type: 'text' as DesignElement['type'] },
+    { icon: MessageCircle, label: 'Chat Bubble', type: 'chat-bubble' as DesignElement['type'] },
+    { icon: Smartphone, label: 'Chat Frame', type: 'chat-frame' as DesignElement['type'] }
   ];
 
   const drawingTools: Array<{
@@ -94,9 +89,9 @@ const HorizontalShapesBar: React.FC<HorizontalShapesBarProps> = ({
   ];
 
   const advancedShapes = [
-    { icon: Star, label: 'Star', action: () => createShape('star') },
-    { icon: Palette, label: 'Gradient', action: () => createShape('gradient') },
-    { icon: Layers, label: 'Adjustment Layer', action: () => createShape('adjustment-layer') }
+    { icon: Star, label: 'Star', type: 'star' as DesignElement['type'] },
+    { icon: Palette, label: 'Gradient', type: 'gradient' as DesignElement['type'] },
+    { icon: Layers, label: 'Adjustment Layer', type: 'adjustment-layer' as DesignElement['type'] }
   ];
 
   const handleSvgUploadClick = () => {
@@ -389,16 +384,23 @@ const HorizontalShapesBar: React.FC<HorizontalShapesBarProps> = ({
             className="hidden"
           />
 
-          {tools.map((tool, index) => (
-            <button
-              key={index}
-              onClick={tool.action}
-              className="w-8 h-8 rounded-md bg-gray-700/50 hover:bg-gray-600/50 transition-all duration-200 hover:scale-105 group flex items-center justify-center"
-              title={tool.label}
-            >
-              <tool.icon className="w-4 h-4 text-gray-300 group-hover:text-yellow-400" />
-            </button>
-          ))}
+          {tools.map((tool, index) => {
+            const isActive = activeTool === tool.type;
+            return (
+              <button
+                key={index}
+                onClick={() => onSetActiveTool?.(isActive ? 'select' : tool.type)}
+                className={`w-8 h-8 rounded-md transition-all duration-200 hover:scale-105 flex items-center justify-center ${
+                  isActive
+                    ? 'bg-yellow-400/20 border border-yellow-400/50'
+                    : 'bg-gray-700/50 hover:bg-gray-600/50 group'
+                }`}
+                title={tool.label}
+              >
+                <tool.icon className={`w-4 h-4 ${isActive ? 'text-yellow-400' : 'text-gray-300 group-hover:text-yellow-400'}`} />
+              </button>
+            );
+          })}
 
           {/* Drawing Tools - Line and Pen */}
           {drawingTools.map((tool) => {
@@ -420,16 +422,23 @@ const HorizontalShapesBar: React.FC<HorizontalShapesBarProps> = ({
           })}
 
           {/* Advanced Shapes - Star, Gradient, Adjustment Layer */}
-          {advancedShapes.map((tool, index) => (
-            <button
-              key={index}
-              onClick={tool.action}
-              className="w-8 h-8 rounded-md bg-gray-700/50 hover:bg-gray-600/50 transition-all duration-200 hover:scale-105 group flex items-center justify-center"
-              title={tool.label}
-            >
-              <tool.icon className="w-4 h-4 text-gray-300 group-hover:text-yellow-400" />
-            </button>
-          ))}
+          {advancedShapes.map((tool, index) => {
+            const isActive = activeTool === tool.type;
+            return (
+              <button
+                key={index}
+                onClick={() => onSetActiveTool?.(isActive ? 'select' : tool.type)}
+                className={`w-8 h-8 rounded-md transition-all duration-200 hover:scale-105 flex items-center justify-center ${
+                  isActive
+                    ? 'bg-yellow-400/20 border border-yellow-400/50'
+                    : 'bg-gray-700/50 hover:bg-gray-600/50 group'
+                }`}
+                title={tool.label}
+              >
+                <tool.icon className={`w-4 h-4 ${isActive ? 'text-yellow-400' : 'text-gray-300 group-hover:text-yellow-400'}`} />
+              </button>
+            );
+          })}
         </div>
       </div>
 

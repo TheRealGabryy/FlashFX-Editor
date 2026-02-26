@@ -175,7 +175,7 @@ const DesignModeLayout: React.FC<DesignModeLayoutProps> = ({
   onApplyTextAnimationControl
 }) => {
   const { startTutorial, showWelcomeModal, hideWelcomeModal, state: tutorialState } = useTutorial();
-  const [activeTool, setActiveTool] = useState<'select' | 'line' | 'pen'>('select');
+  const [activeTool, setActiveTool] = useState<string>('select');
   const [showGridSettings, setShowGridSettings] = useState(false);
   const [isLayersPanelCollapsed, setIsLayersPanelCollapsed] = useState(false);
   const [isPropertiesPanelCollapsed, setIsPropertiesPanelCollapsed] = useState(false);

@@ -11,7 +11,22 @@ import { GridSettings, GridCalculations } from '../../hooks/useGridSystem';
 import { findParentGroup } from '../../utils/groupUtils';
 import { useAnimation } from '../../animation-engine';
 import { Preset } from '../../types/preset';
-import { CanvasViewport } from '../../utils/canvasUtils';
+import { CanvasViewport, createShapeAtPosition } from '../../utils/canvasUtils';
+
+const SHAPE_PLACEMENT_TOOLS = ['rectangle', 'circle', 'text', 'chat-bubble', 'chat-frame', 'star', 'gradient', 'adjustment-layer'] as const;
+type ShapePlacementTool = typeof SHAPE_PLACEMENT_TOOLS[number];
+const SHAPE_TOOL_LABELS: Record<ShapePlacementTool, string> = {
+  'rectangle': 'Rectangle',
+  'circle': 'Circle',
+  'text': 'Text',
+  'chat-bubble': 'Chat Bubble',
+  'chat-frame': 'Chat Frame',
+  'star': 'Star',
+  'gradient': 'Gradient',
+  'adjustment-layer': 'Adjustment Layer'
+};
+const isShapePlacementTool = (tool: string): tool is ShapePlacementTool =>
+  SHAPE_PLACEMENT_TOOLS.includes(tool as ShapePlacementTool);
 
 interface CanvasProps {
   elements: DesignElement[];
@@ -49,8 +64,8 @@ interface CanvasProps {
   hasClipboard?: boolean;
   presets?: Preset[];
   canvasViewport?: CanvasViewport;
-  activeTool?: 'select' | 'line' | 'pen';
-  onSetActiveTool?: (tool: 'select' | 'line' | 'pen') => void;
+  activeTool?: string;
+  onSetActiveTool?: (tool: string) => void;
   onAddElement?: (element: DesignElement) => void;
 }
 
@@ -133,6 +148,7 @@ const Canvas: React.FC<CanvasProps> = ({
   const [penPoints, setPenPoints] = useState<{ x: number; y: number }[]>([]);
   const [penDrawingActive, setPenDrawingActive] = useState(false);
   const lastPenPoint = useRef<{ x: number; y: number } | null>(null);
+  const [shapeCursorContainerPos, setShapeCursorContainerPos] = useState<{ x: number; y: number } | null>(null);
 
   const canvasCenter = { x: canvasWidth / 2, y: canvasHeight / 2 };
 
@@ -385,6 +401,10 @@ const Canvas: React.FC<CanvasProps> = ({
           lastPenPoint.current = null;
           onSetActiveTool?.('select');
         }
+        if (isShapePlacementTool(activeTool)) {
+          setShapeCursorContainerPos(null);
+          onSetActiveTool?.('select');
+        }
       }
     };
     document.addEventListener('keydown', handleKeyDown);
@@ -398,11 +418,13 @@ const Canvas: React.FC<CanvasProps> = ({
       setPenPoints([]);
       setPenDrawingActive(false);
       lastPenPoint.current = null;
+      setShapeCursorContainerPos(null);
     }
   }, [activeTool]);
 
   const handleMouseDown = useCallback((e: React.MouseEvent) => {
     if (e.button === 2) return; // Right click
+    if (isShapePlacementTool(activeTool)) return;
 
     const { x: canvasX, y: canvasY } = getCanvasCoordinates(e.clientX, e.clientY);
 
@@ -490,6 +512,13 @@ const Canvas: React.FC<CanvasProps> = ({
   }, [activeTool, penDrawingActive, penPoints, finalizeDrawnLine, onSetActiveTool]);
 
   const handleMouseMove = useCallback((e: React.MouseEvent) => {
+    if (isShapePlacementTool(activeTool)) {
+      const rect = containerRef.current?.getBoundingClientRect();
+      if (rect) {
+        setShapeCursorContainerPos({ x: e.clientX - rect.left, y: e.clientY - rect.top });
+      }
+      return;
+    }
     if (selectionBox) {
       const rect = containerRef.current?.getBoundingClientRect();
       const canvasX = rect ? (e.clientX - rect.left - pan.x) / zoom : 0;
@@ -915,6 +944,37 @@ const Canvas: React.FC<CanvasProps> = ({
             />
           )}
 
+          {/* Shape placement overlay — click to place shape at cursor position */}
+          {isShapePlacementTool(activeTool) && (
+            <div
+              style={{
+                position: 'absolute',
+                top: 0,
+                left: 0,
+                width: canvasWidth,
+                height: canvasHeight,
+                zIndex: 998,
+                cursor: 'crosshair'
+              }}
+              onClick={(e) => {
+                e.stopPropagation();
+                const canvasX = e.nativeEvent.offsetX;
+                const canvasY = e.nativeEvent.offsetY;
+                const element = createShapeAtPosition(activeTool as DesignElement['type'], canvasX, canvasY);
+                onAddElement?.(element);
+                setShapeCursorContainerPos(null);
+                onSetActiveTool?.('select');
+              }}
+              onMouseMove={(e) => {
+                const rect = containerRef.current?.getBoundingClientRect();
+                if (rect) {
+                  setShapeCursorContainerPos({ x: e.clientX - rect.left, y: e.clientY - rect.top });
+                }
+              }}
+              onMouseLeave={() => setShapeCursorContainerPos(null)}
+            />
+          )}
+
           {/* Line drawing preview */}
           {activeTool === 'line' && lineDrawingPoints.length > 0 && (
             <svg
@@ -1012,6 +1072,22 @@ const Canvas: React.FC<CanvasProps> = ({
         <div className="w-px h-3 bg-gray-600" />
         <span className="text-sm text-gray-300 font-mono">{Math.round(zoom * 100)}%</span>
       </div>
+
+      {/* Shape placement cursor label */}
+      {isShapePlacementTool(activeTool) && shapeCursorContainerPos && (
+        <div
+          className="absolute pointer-events-none"
+          style={{
+            left: shapeCursorContainerPos.x + 14,
+            top: shapeCursorContainerPos.y - 32,
+            zIndex: 10000
+          }}
+        >
+          <div className="px-2 py-1 bg-gray-800/90 backdrop-blur-sm rounded border border-gray-600/50 text-xs text-gray-200 font-medium whitespace-nowrap shadow-lg">
+            {SHAPE_TOOL_LABELS[activeTool as ShapePlacementTool]}
+          </div>
+        </div>
+      )}
     </div>
   );
 };
