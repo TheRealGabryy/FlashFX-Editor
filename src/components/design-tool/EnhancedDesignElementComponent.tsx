@@ -420,7 +420,7 @@ const EnhancedDesignElementComponent: React.FC<EnhancedDesignElementComponentPro
     height: element.height,
     opacity: element.opacity,
     transform: `rotate(${element.rotation}deg)`,
-    cursor: element.locked ? 'default' : (isDragging ? 'grabbing' : 'grab'),
+    cursor: element.locked ? 'default' : 'pointer',
     pointerEvents: element.locked ? 'none' : 'auto'
   };
 
@@ -1136,7 +1136,7 @@ const EnhancedDesignElementComponent: React.FC<EnhancedDesignElementComponentPro
                 backgroundColor: '#3B82F6',
                 border: '3px solid #2563EB',
                 borderRadius: '50%',
-                cursor: 'grab',
+                cursor: 'pointer',
                 pointerEvents: 'auto',
                 display: 'flex',
                 alignItems: 'center',

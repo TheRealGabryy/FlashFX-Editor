@@ -188,7 +188,7 @@ const DesignElementComponent: React.FC<DesignElementComponentProps> = ({
     height: element.height,
     opacity: element.opacity,
     transform: `rotate(${element.rotation}deg)`,
-    cursor: element.locked ? 'default' : (isDragging ? 'grabbing' : 'grab'),
+    cursor: element.locked ? 'default' : 'pointer',
     pointerEvents: element.locked ? 'none' : 'auto'
   };
 

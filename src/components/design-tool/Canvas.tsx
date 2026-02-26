@@ -849,8 +849,8 @@ const Canvas: React.FC<CanvasProps> = ({
     <div
       ref={containerRef}
       id="canvas-container"
-      className={`w-full h-full relative overflow-hidden bg-gray-900 ${activeTool !== 'select' ? '' : 'editor-cursor-default'}`}
-      style={{ cursor: activeTool !== 'select' ? 'crosshair' : undefined }}
+      className="w-full h-full relative overflow-hidden bg-gray-900"
+      style={{ cursor: activeTool !== 'select' ? 'crosshair' : isDragging ? 'grabbing' : 'grab' }}
       onWheel={handleWheel}
       onMouseDown={handleMouseDown}
       onMouseMove={handleMouseMove}
@@ -859,7 +859,7 @@ const Canvas: React.FC<CanvasProps> = ({
     >
       <div
         ref={canvasRef}
-        className={isDragging || selectionBox ? 'editor-cursor-dragging' : ''}
+        className=""
         style={{
           position: 'absolute',
           left: 0,
