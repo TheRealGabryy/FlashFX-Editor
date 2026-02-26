@@ -33,28 +33,28 @@ const DalleGenerateModal: React.FC<DalleGenerateModalProps> = ({
       style={{ zIndex: 999999 }}
     >
       <div
-        className="absolute inset-0 bg-black/80 backdrop-blur-sm"
+        className="absolute inset-0 bg-black/95 backdrop-blur-md"
         onClick={onClose}
       />
 
       <div
-        className="relative bg-gray-800 rounded-xl shadow-2xl w-full max-w-md flex flex-col border border-gray-700"
-        style={{ zIndex: 1000000 }}
+        className="relative rounded-xl shadow-2xl w-full max-w-md flex flex-col border border-purple-500/60"
+        style={{ zIndex: 1000000, background: '#0f0f13', boxShadow: '0 0 0 1px rgba(168,85,247,0.3), 0 25px 50px rgba(0,0,0,0.9), 0 0 80px rgba(168,85,247,0.08)' }}
       >
-        <div className="flex items-center justify-between p-4 border-b border-gray-700">
+        <div className="flex items-center justify-between p-4 border-b border-purple-500/20">
           <div className="flex items-center space-x-2">
             <ImageIcon className="w-4 h-4 text-gray-400" />
             <h2 className="text-sm font-semibold text-white">Generate Image with AI</h2>
           </div>
           <button
             onClick={onClose}
-            className="p-1 hover:bg-gray-700 rounded transition-colors"
+            className="p-1 hover:bg-white/5 rounded transition-colors"
           >
-            <X className="w-4 h-4 text-gray-400" />
+            <X className="w-4 h-4 text-gray-500" />
           </button>
         </div>
 
-        <div className="p-2 border-b border-gray-700/50">
+        <div className="p-2 border-b border-purple-500/20">
           <div className="flex gap-1">
             <button
               onClick={() => setActiveTier('free')}
@@ -82,19 +82,19 @@ const DalleGenerateModal: React.FC<DalleGenerateModalProps> = ({
               onClick={() => setActiveTier('ultra')}
               className={`flex-1 py-1.5 px-1 rounded-md text-[10px] font-medium transition-all duration-200 flex items-center justify-center gap-1 ${
                 isUltra
-                  ? 'bg-blue-500/10 text-blue-400 border border-blue-500/40'
+                  ? 'bg-purple-500/15 text-purple-400 border border-purple-500/50'
                   : 'text-gray-400 hover:text-white hover:bg-gray-600/30'
               }`}
             >
               <span>Premium</span>
-              <span className="text-[8px] px-1 py-0.5 rounded border font-semibold bg-blue-500/10 text-blue-400 border-blue-500/30">Ultra</span>
+              <span className="text-[8px] px-1 py-0.5 rounded border font-semibold bg-purple-500/15 text-purple-400 border-purple-500/40">Ultra</span>
             </button>
           </div>
         </div>
 
         <div className="flex flex-col items-center justify-center p-8 text-center gap-3">
-          <div className="w-12 h-12 rounded-full bg-gray-700/50 flex items-center justify-center">
-            <Sparkles className="w-6 h-6 text-gray-500" />
+          <div className={`w-12 h-12 rounded-full flex items-center justify-center ${isUltra ? 'bg-purple-500/10 border border-purple-500/30' : 'bg-white/5 border border-white/10'}`}>
+            <Sparkles className={`w-6 h-6 ${isUltra ? 'text-purple-400' : 'text-gray-600'}`} />
           </div>
           <h3 className="text-sm font-semibold text-white">AI Image Generation Disabled</h3>
           <p className="text-xs text-gray-400 leading-relaxed max-w-xs">
@@ -109,14 +109,14 @@ const DalleGenerateModal: React.FC<DalleGenerateModalProps> = ({
             </a>
             {' '}to use AI features in early beta testing.
           </p>
-          <p className={`text-[10px] font-medium ${isFree ? 'text-green-400' : isLimited ? 'text-yellow-400' : 'text-blue-400'}`}>
+          <p className={`text-[10px] font-medium ${isFree ? 'text-green-400' : isLimited ? 'text-yellow-400' : 'text-purple-400'}`}>
             {tierLabel} plan · {tierModel}
           </p>
         </div>
 
-        <div className="p-3 border-t border-gray-700/50">
-          <div className={`flex items-end gap-2 rounded-lg border bg-gray-900/50 px-2 py-1.5 transition-colors ${
-            isFree ? 'border-green-500/50' : isLimited ? 'border-yellow-500/50' : 'border-blue-500/50'
+        <div className="p-3 border-t border-purple-500/20">
+          <div className={`flex items-end gap-2 rounded-lg border px-2 py-1.5 transition-colors ${
+            isFree ? 'border-green-500/50 bg-black/30' : isLimited ? 'border-yellow-500/50 bg-black/30' : 'border-purple-500/50 bg-purple-950/20'
           }`}>
             <textarea
               value={prompt}
