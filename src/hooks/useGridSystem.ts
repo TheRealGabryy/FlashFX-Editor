@@ -7,6 +7,7 @@ export interface GridSettings {
   columns: number;
   color: string;
   opacity: number;
+  showCenterPoint: boolean;
 }
 
 export interface GridCalculations {
@@ -22,7 +23,8 @@ const DEFAULT_GRID_SETTINGS: GridSettings = {
   rows: 12,
   columns: 16,
   color: '#FFD700',
-  opacity: 0.3
+  opacity: 0.3,
+  showCenterPoint: false
 };
 
 export const useGridSystem = (canvasSize: { width: number; height: number }) => {

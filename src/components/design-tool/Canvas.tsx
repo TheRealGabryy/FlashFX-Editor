@@ -756,11 +756,11 @@ const Canvas: React.FC<CanvasProps> = ({
         <div
           id="canvas-artboard"
           ref={artboardRef}
-          className="relative border-2 border-gray-600 shadow-2xl flex-shrink-0"
+          className="relative border-2 border-black shadow-2xl flex-shrink-0"
           style={{
             width: canvasWidth,
             height: canvasHeight,
-            backgroundColor: !background?.enabled ? '#1F2937' : undefined,
+            backgroundColor: !background?.enabled ? '#000000' : undefined,
             ...( background?.enabled ? generateBackgroundStyle(background) : {})
           }}
         >
@@ -783,13 +783,15 @@ const Canvas: React.FC<CanvasProps> = ({
           )
 
           {/* Canvas Center Point */}
-          <div
-            className="absolute w-2 h-2 bg-yellow-400 rounded-full transform -translate-x-1/2 -translate-y-1/2 pointer-events-none opacity-50"
-            style={{
-              left: canvasWidth / 2,
-              top: canvasHeight / 2
-            }}
-          />
+          {gridSettings?.showCenterPoint && (
+            <div
+              className="absolute w-2 h-2 bg-yellow-400 rounded-full transform -translate-x-1/2 -translate-y-1/2 pointer-events-none opacity-50"
+              style={{
+                left: canvasWidth / 2,
+                top: canvasHeight / 2
+              }}
+            />
+          )}
 
           {/* Elements */}
           {renderElements(displayElements)}

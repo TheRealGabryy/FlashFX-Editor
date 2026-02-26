@@ -411,6 +411,25 @@ const EditorSettingsModal: React.FC<EditorSettingsModalProps> = ({
             </button>
           </div>
         )}
+
+        <div className="flex items-center justify-between p-3 bg-gray-700/30 rounded-lg">
+          <div>
+            <div className="text-sm font-medium text-white">Show Center Point</div>
+            <div className="text-xs text-gray-400">Display the canvas center marker</div>
+          </div>
+          <button
+            onClick={() => setLocalGridSettings({ ...localGridSettings, showCenterPoint: !localGridSettings.showCenterPoint })}
+            className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+              localGridSettings.showCenterPoint ? 'bg-yellow-400' : 'bg-gray-600'
+            }`}
+          >
+            <span
+              className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                localGridSettings.showCenterPoint ? 'translate-x-6' : 'translate-x-1'
+              }`}
+            />
+          </button>
+        </div>
       </div>
 
       <div className="p-3 bg-blue-500/10 border border-blue-500/30 rounded-lg">
