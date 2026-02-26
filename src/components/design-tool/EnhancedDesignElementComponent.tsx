@@ -525,7 +525,7 @@ const EnhancedDesignElementComponent: React.FC<EnhancedDesignElementComponentPro
 
       case 'text': {
         const generatePatternSvg = (type: string, color: string, bgColor: string, size: number, spacing: number, angle: number) => {
-          const totalSize = size + spacing;
+          const totalSize = Math.max(1, size + spacing);
           let patternContent = '';
 
           switch (type) {
@@ -593,6 +593,12 @@ const EnhancedDesignElementComponent: React.FC<EnhancedDesignElementComponentPro
           ...shadowStyle
         };
 
+        const spanFillStyle: React.CSSProperties = {
+          width: '100%',
+          textOverflow: element.textOverflow || 'clip',
+          overflow: element.textOverflow === 'ellipsis' ? 'hidden' : 'visible',
+        };
+
         let fillApplied = false;
 
         // Texture fill (highest priority)
@@ -600,13 +606,13 @@ const EnhancedDesignElementComponent: React.FC<EnhancedDesignElementComponentPro
           const scale = element.textTextureFillScale || 100;
           const offsetX = element.textTextureFillOffsetX || 0;
           const offsetY = element.textTextureFillOffsetY || 0;
-          textStyles.background = `url(${element.textTextureFillImage})`;
-          textStyles.backgroundSize = `${scale}%`;
-          textStyles.backgroundPosition = `${offsetX}px ${offsetY}px`;
-          textStyles.backgroundRepeat = 'repeat';
-          textStyles.WebkitBackgroundClip = 'text';
-          textStyles.WebkitTextFillColor = 'transparent';
-          textStyles.backgroundClip = 'text';
+          spanFillStyle.background = `url(${element.textTextureFillImage})`;
+          spanFillStyle.backgroundSize = `${scale}%`;
+          spanFillStyle.backgroundPosition = `${offsetX}px ${offsetY}px`;
+          spanFillStyle.backgroundRepeat = 'repeat';
+          spanFillStyle.WebkitBackgroundClip = 'text';
+          spanFillStyle.WebkitTextFillColor = 'transparent';
+          spanFillStyle.backgroundClip = 'text';
           fillApplied = true;
         }
         // Pattern fill
@@ -614,19 +620,19 @@ const EnhancedDesignElementComponent: React.FC<EnhancedDesignElementComponentPro
           const patternType = element.textPatternType;
           const patternColor = element.textPatternColor || '#FFFFFF';
           const patternBgColor = element.textPatternBackgroundColor || 'transparent';
-          const patternSize = element.textPatternSize || 10;
-          const patternSpacing = element.textPatternSpacing || 5;
-          const patternAngle = element.textPatternAngle || 0;
+          const patternSize = element.textPatternSize ?? 10;
+          const patternSpacing = element.textPatternSpacing ?? 5;
+          const patternAngle = element.textPatternAngle ?? 0;
 
           if (patternType === 'custom' && element.textPatternCustomSvg) {
-            textStyles.background = `url("data:image/svg+xml,${encodeURIComponent(element.textPatternCustomSvg)}")`;
+            spanFillStyle.background = `url("data:image/svg+xml,${encodeURIComponent(element.textPatternCustomSvg)}")`;
           } else {
-            textStyles.background = generatePatternSvg(patternType, patternColor, patternBgColor, patternSize, patternSpacing, patternAngle);
+            spanFillStyle.background = generatePatternSvg(patternType, patternColor, patternBgColor, patternSize, patternSpacing, patternAngle);
           }
-          textStyles.backgroundRepeat = 'repeat';
-          textStyles.WebkitBackgroundClip = 'text';
-          textStyles.WebkitTextFillColor = 'transparent';
-          textStyles.backgroundClip = 'text';
+          spanFillStyle.backgroundRepeat = 'repeat';
+          spanFillStyle.WebkitBackgroundClip = 'text';
+          spanFillStyle.WebkitTextFillColor = 'transparent';
+          spanFillStyle.backgroundClip = 'text';
           fillApplied = true;
         }
         // Gradient fill
@@ -635,20 +641,20 @@ const EnhancedDesignElementComponent: React.FC<EnhancedDesignElementComponentPro
           const gradientColors = sortedColors.map(c => `${c.color} ${c.position}%`).join(', ');
 
           if (element.textGradientType === 'radial') {
-            textStyles.background = `radial-gradient(circle, ${gradientColors})`;
+            spanFillStyle.background = `radial-gradient(circle, ${gradientColors})`;
           } else {
             const angle = element.textGradientAngle || 90;
-            textStyles.background = `linear-gradient(${angle}deg, ${gradientColors})`;
+            spanFillStyle.background = `linear-gradient(${angle}deg, ${gradientColors})`;
           }
-          textStyles.WebkitBackgroundClip = 'text';
-          textStyles.WebkitTextFillColor = 'transparent';
-          textStyles.backgroundClip = 'text';
+          spanFillStyle.WebkitBackgroundClip = 'text';
+          spanFillStyle.WebkitTextFillColor = 'transparent';
+          spanFillStyle.backgroundClip = 'text';
           fillApplied = true;
         }
 
         // Default solid color
         if (!fillApplied) {
-          textStyles.color = element.textColor || '#FFFFFF';
+          spanFillStyle.color = element.textColor || '#FFFFFF';
         }
 
         // Text stroke
@@ -684,12 +690,12 @@ const EnhancedDesignElementComponent: React.FC<EnhancedDesignElementComponentPro
           textStyles.transform = `translateY(${-element.baselineShift}px)`;
         }
 
-        // Max lines support
+        // Max lines support — applied to the inner span so it doesn't conflict with outer flex layout
         if (element.maxLines && element.maxLines > 0) {
-          textStyles.display = '-webkit-box';
-          textStyles.WebkitLineClamp = element.maxLines;
-          textStyles.WebkitBoxOrient = 'vertical';
-          textStyles.overflow = 'hidden';
+          spanFillStyle.display = '-webkit-box';
+          spanFillStyle.WebkitLineClamp = element.maxLines;
+          spanFillStyle.WebkitBoxOrient = 'vertical';
+          spanFillStyle.overflow = 'hidden';
         }
 
         // Render rich text if enabled
@@ -739,7 +745,7 @@ const EnhancedDesignElementComponent: React.FC<EnhancedDesignElementComponentPro
             onMouseEnter={() => onHover(true)}
             onMouseLeave={() => onHover(false)}
           >
-            {element.text}
+            <span style={spanFillStyle}>{element.text}</span>
           </div>
         );
       }
