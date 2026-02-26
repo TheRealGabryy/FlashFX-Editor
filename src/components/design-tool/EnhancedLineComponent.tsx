@@ -293,7 +293,7 @@ const EnhancedLineComponent: React.FC<EnhancedLineComponentProps> = ({
 
   // Handle double-click to add points
   const handleDoubleClick = useCallback((e: React.MouseEvent) => {
-    if (!isSelected || element.lineType === 'line') return;
+    if (!isSelected) return;
     
     e.stopPropagation();
     const rect = svgRef.current?.getBoundingClientRect();

@@ -49,6 +49,9 @@ interface CanvasProps {
   hasClipboard?: boolean;
   presets?: Preset[];
   canvasViewport?: CanvasViewport;
+  activeTool?: 'select' | 'line' | 'pen';
+  onSetActiveTool?: (tool: 'select' | 'line' | 'pen') => void;
+  onAddElement?: (element: DesignElement) => void;
 }
 
 const DEFAULT_CANVAS_WIDTH = 3840;
@@ -89,7 +92,10 @@ const Canvas: React.FC<CanvasProps> = ({
   onResetTransform,
   hasClipboard = false,
   presets = [],
-  canvasViewport
+  canvasViewport,
+  activeTool = 'select',
+  onSetActiveTool,
+  onAddElement
 }) => {
   const { getAnimatedElementState, hasKeyframesForProperty, addKeyframe, getTrack, state: animationState } = useAnimation();
   const canvasRef = useRef<HTMLDivElement>(null);
@@ -112,6 +118,12 @@ const Canvas: React.FC<CanvasProps> = ({
   const [hoveredElement, setHoveredElement] = useState<string | null>(null);
   const [manipulatingElements, setManipulatingElements] = useState<Set<string>>(new Set());
   const manipulatedPropertiesRef = useRef<Map<string, Set<string>>>(new Map());
+
+  const [lineDrawingPoints, setLineDrawingPoints] = useState<{ x: number; y: number }[]>([]);
+  const [mousePreviewPos, setMousePreviewPos] = useState<{ x: number; y: number } | null>(null);
+  const [penPoints, setPenPoints] = useState<{ x: number; y: number }[]>([]);
+  const [penDrawingActive, setPenDrawingActive] = useState(false);
+  const lastPenPoint = useRef<{ x: number; y: number } | null>(null);
 
   const canvasCenter = { x: canvasWidth / 2, y: canvasHeight / 2 };
 
@@ -262,6 +274,93 @@ const Canvas: React.FC<CanvasProps> = ({
     return { x: canvasX, y: canvasY };
   }, [zoom]);
 
+  const finalizeDrawnLine = useCallback((absPoints: { x: number; y: number }[], toolType: 'line' | 'pen') => {
+    if (absPoints.length < 2) return;
+
+    const minX = Math.min(...absPoints.map(p => p.x));
+    const maxX = Math.max(...absPoints.map(p => p.x));
+    const minY = Math.min(...absPoints.map(p => p.y));
+    const maxY = Math.max(...absPoints.map(p => p.y));
+
+    const width = Math.max(maxX - minX, 1);
+    const height = Math.max(maxY - minY, 1);
+
+    const relativePoints = absPoints.map(p => ({ x: p.x - minX, y: p.y - minY, radius: 0 }));
+
+    const element: DesignElement = {
+      id: Date.now().toString(),
+      type: 'line',
+      name: toolType === 'pen' ? 'Pen' : 'Line',
+      x: minX,
+      y: minY,
+      width,
+      height,
+      rotation: 0,
+      opacity: 1,
+      locked: false,
+      visible: true,
+      fill: 'none',
+      stroke: '#FFFFFF',
+      strokeWidth: 4,
+      borderRadius: 0,
+      shadow: { blur: 0, color: 'transparent', x: 0, y: 0 },
+      points: relativePoints,
+      lineType: toolType,
+      lineCap: 'round',
+      lineJoin: 'round',
+      dashArray: [],
+      trimStart: 0,
+      trimEnd: 1,
+      closePath: false,
+      arrowStart: false,
+      arrowEnd: false,
+      arrowheadType: 'triangle',
+      arrowheadSize: 12,
+      smoothing: 0,
+      cornerRadius: 0,
+      pointCornerRadii: [],
+      autoScaleArrows: false
+    };
+
+    onAddElement?.(element);
+  }, [onAddElement]);
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Enter' && activeTool === 'line' && lineDrawingPoints.length >= 2) {
+        finalizeDrawnLine(lineDrawingPoints, 'line');
+        setLineDrawingPoints([]);
+        setMousePreviewPos(null);
+        onSetActiveTool?.('select');
+      }
+      if (e.key === 'Escape') {
+        if (activeTool === 'line') {
+          setLineDrawingPoints([]);
+          setMousePreviewPos(null);
+          onSetActiveTool?.('select');
+        }
+        if (activeTool === 'pen') {
+          setPenPoints([]);
+          setPenDrawingActive(false);
+          lastPenPoint.current = null;
+          onSetActiveTool?.('select');
+        }
+      }
+    };
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [activeTool, lineDrawingPoints, finalizeDrawnLine, onSetActiveTool]);
+
+  useEffect(() => {
+    if (activeTool === 'select') {
+      setLineDrawingPoints([]);
+      setMousePreviewPos(null);
+      setPenPoints([]);
+      setPenDrawingActive(false);
+      lastPenPoint.current = null;
+    }
+  }, [activeTool]);
+
   const handleMouseDown = useCallback((e: React.MouseEvent) => {
     if (e.button === 2) return; // Right click
 
@@ -304,6 +403,49 @@ const Canvas: React.FC<CanvasProps> = ({
       }
     }
   }, [pan, zoom, elements, getCanvasCoordinates, canvasWidth, canvasHeight]);
+
+  const handleDrawingMouseDown = useCallback((e: React.MouseEvent) => {
+    if (e.button === 2) return;
+    e.stopPropagation();
+    const { x, y } = getCanvasCoordinates(e.clientX, e.clientY);
+
+    if (activeTool === 'line') {
+      setLineDrawingPoints(prev => [...prev, { x, y }]);
+    } else if (activeTool === 'pen') {
+      setPenPoints([{ x, y }]);
+      setPenDrawingActive(true);
+      lastPenPoint.current = { x, y };
+    }
+  }, [activeTool, getCanvasCoordinates]);
+
+  const handleDrawingMouseMove = useCallback((e: React.MouseEvent) => {
+    const { x, y } = getCanvasCoordinates(e.clientX, e.clientY);
+
+    if (activeTool === 'line') {
+      setMousePreviewPos({ x, y });
+    } else if (activeTool === 'pen' && penDrawingActive) {
+      const last = lastPenPoint.current;
+      if (last) {
+        const dist = Math.sqrt((x - last.x) ** 2 + (y - last.y) ** 2);
+        if (dist >= 4) {
+          setPenPoints(prev => [...prev, { x, y }]);
+          lastPenPoint.current = { x, y };
+        }
+      }
+    }
+  }, [activeTool, penDrawingActive, getCanvasCoordinates]);
+
+  const handleDrawingMouseUp = useCallback(() => {
+    if (activeTool === 'pen' && penDrawingActive) {
+      setPenDrawingActive(false);
+      if (penPoints.length >= 2) {
+        finalizeDrawnLine(penPoints, 'pen');
+      }
+      setPenPoints([]);
+      lastPenPoint.current = null;
+      onSetActiveTool?.('select');
+    }
+  }, [activeTool, penDrawingActive, penPoints, finalizeDrawnLine, onSetActiveTool]);
 
   const handleMouseMove = useCallback((e: React.MouseEvent) => {
     if (selectionBox) {
@@ -593,7 +735,7 @@ const Canvas: React.FC<CanvasProps> = ({
   };
 
   return (
-    <div className="w-full h-full relative overflow-hidden bg-gray-900 editor-cursor-default" onWheel={handleWheel}>
+    <div className={`w-full h-full relative overflow-hidden bg-gray-900 ${activeTool !== 'select' ? '' : 'editor-cursor-default'}`} style={{ cursor: activeTool !== 'select' ? 'crosshair' : undefined }} onWheel={handleWheel}>
       <div
         ref={canvasRef}
         className={`w-full h-full flex items-center justify-center p-4 ${isDragging || selectionBox ? 'editor-cursor-dragging' : 'editor-cursor-default'}`}
@@ -669,6 +811,55 @@ const Canvas: React.FC<CanvasProps> = ({
                 height: Math.abs(selectionBox.endY - selectionBox.startY)
               }}
             />
+          )}
+
+          {/* Drawing tool overlay — intercepts mouse events when in drawing mode */}
+          {(activeTool === 'line' || activeTool === 'pen') && (
+            <div
+              style={{
+                position: 'absolute',
+                top: 0,
+                left: 0,
+                width: canvasWidth,
+                height: canvasHeight,
+                zIndex: 998,
+                cursor: 'crosshair'
+              }}
+              onMouseDown={handleDrawingMouseDown}
+              onMouseMove={handleDrawingMouseMove}
+              onMouseUp={handleDrawingMouseUp}
+            />
+          )}
+
+          {/* Line drawing preview */}
+          {activeTool === 'line' && lineDrawingPoints.length > 0 && (
+            <svg
+              style={{ position: 'absolute', top: 0, left: 0, width: canvasWidth, height: canvasHeight, pointerEvents: 'none', overflow: 'visible', zIndex: 999 }}
+            >
+              {lineDrawingPoints.slice(0, -1).map((p, i) => (
+                <line key={i} x1={p.x} y1={p.y} x2={lineDrawingPoints[i + 1].x} y2={lineDrawingPoints[i + 1].y} stroke="#FFD700" strokeWidth={3} strokeDasharray="8,4" />
+              ))}
+              {mousePreviewPos && (
+                <line x1={lineDrawingPoints[lineDrawingPoints.length - 1].x} y1={lineDrawingPoints[lineDrawingPoints.length - 1].y} x2={mousePreviewPos.x} y2={mousePreviewPos.y} stroke="rgba(255,215,0,0.45)" strokeWidth={2} strokeDasharray="8,4" />
+              )}
+              {lineDrawingPoints.map((p, i) => (
+                <circle key={i} cx={p.x} cy={p.y} r={6} fill="#FFD700" stroke="#FFA500" strokeWidth={2} />
+              ))}
+              {lineDrawingPoints.length >= 2 && mousePreviewPos && (
+                <text x={mousePreviewPos.x + 14} y={mousePreviewPos.y - 10} fill="#FFD700" fontSize={14} fontFamily="Inter, sans-serif" style={{ userSelect: 'none' }}>
+                  Press Enter to finish · ESC to cancel
+                </text>
+              )}
+            </svg>
+          )}
+
+          {/* Pen drawing preview */}
+          {activeTool === 'pen' && penPoints.length > 1 && (
+            <svg
+              style={{ position: 'absolute', top: 0, left: 0, width: canvasWidth, height: canvasHeight, pointerEvents: 'none', overflow: 'visible', zIndex: 999 }}
+            >
+              <polyline points={penPoints.map(p => `${p.x},${p.y}`).join(' ')} fill="none" stroke="#FFD700" strokeWidth={3} strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
           )}
         </div>
       </div>

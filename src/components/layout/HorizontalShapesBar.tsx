@@ -1,5 +1,5 @@
 import React, { useRef, useState } from 'react';
-import { Square, Circle, Type, MessageCircle, Smartphone, Grid2x2 as Grid, Settings, Minus, Plus, Download, Star, Palette, Layers, FileCode, Upload, FolderOpen, Save, LogOut, Undo2, Redo2 } from 'lucide-react';
+import { Square, Circle, Type, MessageCircle, Smartphone, Grid2x2 as Grid, Settings, Minus, Plus, Download, Star, Palette, Layers, FileCode, Upload, FolderOpen, Save, LogOut, Undo2, Redo2, PenLine } from 'lucide-react';
 import { DesignElement } from '../../types/design';
 import { createShapeAtCenter, CanvasViewport } from '../../utils/canvasUtils';
 import { LayoutMode } from '../../hooks/useLayoutMode';
@@ -34,6 +34,8 @@ interface HorizontalShapesBarProps {
   currentMode?: LayoutMode;
   onModeChange?: (mode: LayoutMode) => void;
   isTransitioning?: boolean;
+  activeTool?: 'select' | 'line' | 'pen';
+  onSetActiveTool?: (tool: 'select' | 'line' | 'pen') => void;
 }
 
 const HorizontalShapesBar: React.FC<HorizontalShapesBarProps> = ({
@@ -58,7 +60,9 @@ const HorizontalShapesBar: React.FC<HorizontalShapesBarProps> = ({
   onRedo,
   currentMode,
   onModeChange,
-  isTransitioning
+  isTransitioning,
+  activeTool = 'select',
+  onSetActiveTool
 }) => {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const svgFileInputRef = useRef<HTMLInputElement>(null);
@@ -71,24 +75,6 @@ const HorizontalShapesBar: React.FC<HorizontalShapesBarProps> = ({
     onAddElement(element);
   };
 
-  const createLine = (mode: 'line' | 'arrow' | 'pen') => {
-    const element = createShapeAtCenter('line' as DesignElement['type'], canvasSize, viewport, {
-      lineType: mode,
-      points: mode === 'pen' ? [] : [
-        { x: 0, y: 0 },
-        { x: 200, y: 0 }
-      ],
-      arrowStart: mode === 'arrow',
-      arrowEnd: mode === 'arrow',
-      arrowheadType: 'triangle',
-      arrowheadSize: 12,
-      lineCap: 'round',
-      lineJoin: 'round',
-      dashArray: [],
-      smoothing: 0
-    });
-    onAddElement(element);
-  };
   const tools = [
     { icon: Square, label: 'Rectangle', action: () => createShape('rectangle') },
     { icon: Circle, label: 'Circle', action: () => createShape('circle') },
@@ -97,8 +83,14 @@ const HorizontalShapesBar: React.FC<HorizontalShapesBarProps> = ({
     { icon: Smartphone, label: 'Chat Frame', action: () => createShape('chat-frame') }
   ];
 
-  const lineTools = [
-    { mode: 'line' as const, icon: Minus, label: 'Line', description: 'Draw straight lines' }
+  const drawingTools: Array<{
+    tool: 'line' | 'pen';
+    icon: React.ElementType;
+    label: string;
+    title: string;
+  }> = [
+    { tool: 'line', icon: Minus, label: 'Line', title: 'Line Tool — click to place points, Enter to finish, ESC to cancel' },
+    { tool: 'pen', icon: PenLine, label: 'Pen', title: 'Pen Tool — drag to draw freehand' }
   ];
 
   const advancedShapes = [
@@ -408,17 +400,24 @@ const HorizontalShapesBar: React.FC<HorizontalShapesBarProps> = ({
             </button>
           ))}
 
-          {/* Line Tools - Separate Buttons */}
-          {lineTools.map((tool) => (
-            <button
-              key={tool.mode}
-              onClick={() => createLine(tool.mode)}
-              className="w-8 h-8 rounded-md bg-gray-700/50 hover:bg-gray-600/50 transition-all duration-200 hover:scale-105 group flex items-center justify-center"
-              title={tool.label}
-            >
-              <tool.icon className="w-4 h-4 text-gray-300 group-hover:text-yellow-400" />
-            </button>
-          ))}
+          {/* Drawing Tools - Line and Pen */}
+          {drawingTools.map((tool) => {
+            const isActive = activeTool === tool.tool;
+            return (
+              <button
+                key={tool.tool}
+                onClick={() => onSetActiveTool?.(isActive ? 'select' : tool.tool)}
+                className={`w-8 h-8 rounded-md transition-all duration-200 hover:scale-105 flex items-center justify-center ${
+                  isActive
+                    ? 'bg-yellow-400/20 border border-yellow-400/50'
+                    : 'bg-gray-700/50 hover:bg-gray-600/50 group'
+                }`}
+                title={tool.title}
+              >
+                <tool.icon className={`w-4 h-4 ${isActive ? 'text-yellow-400' : 'text-gray-300 group-hover:text-yellow-400'}`} />
+              </button>
+            );
+          })}
 
           {/* Advanced Shapes - Star, Gradient, Adjustment Layer */}
           {advancedShapes.map((tool, index) => (

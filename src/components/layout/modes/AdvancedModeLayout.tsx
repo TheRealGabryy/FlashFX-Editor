@@ -144,6 +144,7 @@ const AdvancedModeLayout: React.FC<AdvancedModeLayoutProps> = ({
 }) => {
   const { startTutorial, showWelcomeModal, hideWelcomeModal, state: tutorialState } = useTutorial();
   const [showGridSettings, setShowGridSettings] = useState(false);
+  const [activeTool, setActiveTool] = useState<'select' | 'line' | 'pen'>('select');
   const [isLayersPanelCollapsed, setIsLayersPanelCollapsed] = useState(false);
   const [isPropertiesPanelCollapsed, setIsPropertiesPanelCollapsed] = useState(false);
   const [showExitConfirmModal, setShowExitConfirmModal] = useState(false);
@@ -367,6 +368,8 @@ const AdvancedModeLayout: React.FC<AdvancedModeLayoutProps> = ({
               currentMode="design"
               onModeChange={() => {}}
               isTransitioning={false}
+              activeTool={activeTool}
+              onSetActiveTool={setActiveTool}
             />
           </div>
 
@@ -408,6 +411,9 @@ const AdvancedModeLayout: React.FC<AdvancedModeLayoutProps> = ({
                 hasClipboard={false}
                 presets={presets}
                 canvasViewport={viewport}
+                activeTool={activeTool}
+                onSetActiveTool={setActiveTool}
+                onAddElement={onAddElement}
               />
             </div>
 

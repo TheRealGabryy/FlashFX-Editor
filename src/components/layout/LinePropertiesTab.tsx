@@ -232,30 +232,6 @@ const LinePropertiesTab: React.FC<LinePropertiesTabProps> = ({
           </div>
         </div>
 
-        {/* Line Type */}
-        <div>
-          <label className="text-xs text-gray-400 block mb-0.5">Line Type</label>
-          <div className="grid grid-cols-3 gap-0.5">
-            {[
-              { value: 'line', label: 'Line' },
-              { value: 'arrow', label: 'Arrow' },
-              { value: 'pen', label: 'Pen' }
-            ].map(({ value, label }) => (
-              <button
-                key={value}
-                onClick={() => handleUpdate({ lineType: value as any })}
-                className={`px-1.5 py-0.5 rounded text-xs transition-all duration-200 ${
-                  selectedElement.lineType === value
-                    ? 'bg-yellow-400/20 text-yellow-400 border border-yellow-400/50'
-                    : 'bg-gray-700/50 text-gray-300 hover:bg-gray-600/50'
-                }`}
-              >
-                {label}
-              </button>
-            ))}
-          </div>
-        </div>
-
         {/* Line Caps and Joins */}
         <div className="grid grid-cols-2 gap-1.5">
           <div>
