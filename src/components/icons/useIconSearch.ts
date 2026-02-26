@@ -1,5 +1,4 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
-import Fuse from 'fuse.js';
 import type { IconIndexEntry, IconData } from './types';
 import { loadIconChunk } from './IconChunkLoader';
 
@@ -11,12 +10,38 @@ interface UseIconSearchReturn {
   totalIndexed: number;
 }
 
+function scoreEntry(entry: IconIndexEntry, terms: string[]): number {
+  let score = 0;
+  const nameLower = entry.name.toLowerCase();
+  const idLower = entry.id.toLowerCase();
+  for (const term of terms) {
+    if (nameLower === term || idLower === term) { score += 100; continue; }
+    if (nameLower.startsWith(term) || idLower.startsWith(term)) { score += 60; continue; }
+    if (nameLower.includes(term) || idLower.includes(term)) { score += 30; continue; }
+    const tagMatch = entry.tags.some(t => t.toLowerCase().includes(term));
+    if (tagMatch) { score += 15; continue; }
+  }
+  return score;
+}
+
+function searchIndex(index: IconIndexEntry[], query: string, limit = 120): IconIndexEntry[] {
+  const terms = query.toLowerCase().trim().split(/\s+/).filter(Boolean);
+  if (terms.length === 0) return index.slice(0, limit);
+
+  const scored: { entry: IconIndexEntry; score: number }[] = [];
+  for (const entry of index) {
+    const s = scoreEntry(entry, terms);
+    if (s > 0) scored.push({ entry, score: s });
+  }
+  scored.sort((a, b) => b.score - a.score);
+  return scored.slice(0, limit).map(s => s.entry);
+}
+
 export function useIconSearch(): UseIconSearchReturn {
   const [index, setIndex] = useState<IconIndexEntry[]>([]);
   const [query, setQuery] = useState('');
   const [results, setResults] = useState<IconData[]>([]);
   const [isLoading, setIsLoading] = useState(false);
-  const fuseRef = useRef<Fuse<IconIndexEntry> | null>(null);
   const debounceRef = useRef<ReturnType<typeof setTimeout>>();
 
   useEffect(() => {
@@ -24,13 +49,7 @@ export function useIconSearch(): UseIconSearchReturn {
     fetch('/icons/index.json')
       .then(res => res.json())
       .then((data: IconIndexEntry[]) => {
-        if (cancelled) return;
-        setIndex(data);
-        fuseRef.current = new Fuse(data, {
-          keys: ['name', 'tags'],
-          threshold: 0.3,
-          includeScore: true,
-        });
+        if (!cancelled) setIndex(data);
       });
     return () => { cancelled = true; };
   }, []);
@@ -60,18 +79,12 @@ export function useIconSearch(): UseIconSearchReturn {
     if (debounceRef.current) clearTimeout(debounceRef.current);
 
     debounceRef.current = setTimeout(async () => {
-      if (!fuseRef.current || index.length === 0) return;
-
+      if (index.length === 0) return;
       setIsLoading(true);
       try {
-        let entries: IconIndexEntry[];
-        if (query.trim() === '') {
-          entries = defaultEntries;
-        } else {
-          const fuseResults = fuseRef.current.search(query, { limit: 120 });
-          entries = fuseResults.map(r => r.item);
-        }
-
+        const entries = query.trim() === ''
+          ? defaultEntries
+          : searchIndex(index, query);
         const icons = await loadResults(entries);
         setResults(icons);
       } finally {
