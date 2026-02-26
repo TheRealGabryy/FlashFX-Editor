@@ -19,26 +19,26 @@ const STORAGE_KEY = 'flashfx_shape_defaults';
 
 const DEFAULT_SHAPE_SETTINGS: ShapeDefaults = {
   rectangle: {
-    material: { ...createDefaultMaterial('matte'), color: '#3B82F6' },
-    stroke: '#1E40AF',
+    material: { ...createDefaultMaterial('matte'), color: '#404040' },
+    stroke: '#404040',
     strokeWidth: 2,
-    borderRadius: 8,
+    borderRadius: 0,
     opacity: 1,
     shadow: {
-      blur: 8,
+      blur: 0,
       color: 'rgba(0, 0, 0, 0.3)',
       x: 0,
       y: 4
     }
   },
   circle: {
-    material: { ...createDefaultMaterial('matte'), color: '#EF4444' },
-    stroke: '#DC2626',
+    material: { ...createDefaultMaterial('matte'), color: '#404040' },
+    stroke: '#404040',
     strokeWidth: 2,
     borderRadius: 50,
     opacity: 1,
     shadow: {
-      blur: 8,
+      blur: 0,
       color: 'rgba(0, 0, 0, 0.3)',
       x: 0,
       y: 4
@@ -111,13 +111,13 @@ const DEFAULT_SHAPE_SETTINGS: ShapeDefaults = {
     textColor: '#FFFFFF'
   },
   chatFrame: {
-    material: { ...createDefaultMaterial('matte'), color: '#000000' },
-    stroke: '#374151',
-    strokeWidth: 2,
+    material: { ...createDefaultMaterial('matte'), color: '#FFFFFF' },
+    stroke: '#000000',
+    strokeWidth: 20,
     borderRadius: 36,
     opacity: 1,
     shadow: {
-      blur: 20,
+      blur: 0,
       color: 'rgba(0, 0, 0, 0.5)',
       x: 0,
       y: 8
@@ -146,14 +146,14 @@ const DEFAULT_SHAPE_SETTINGS: ShapeDefaults = {
     smoothing: 0
   },
   star: {
-    material: { ...createDefaultMaterial('matte'), color: '#FBBF24' },
-    stroke: '#F59E0B',
+    material: { ...createDefaultMaterial('matte'), color: '#404040' },
+    stroke: '#404040',
     strokeWidth: 2,
     borderRadius: 0,
     opacity: 1,
     shadow: {
-      blur: 8,
-      color: 'rgba(251, 191, 36, 0.3)',
+      blur: 0,
+      color: 'rgba(0, 0, 0, 0.3)',
       x: 0,
       y: 4
     },
