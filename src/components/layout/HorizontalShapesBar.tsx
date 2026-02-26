@@ -84,12 +84,12 @@ const HorizontalShapesBar: React.FC<HorizontalShapesBarProps> = ({
   const [showDalleGenerate, setShowDalleGenerate] = useState(false);
   const [showIconLibrary, setShowIconLibrary] = useState(false);
 
-  const handleIconSelect = useCallback((icon: IconData) => {
+  const handleIconSelect = useCallback((icon: IconData, color: string) => {
     const svgString = iconToSvgString(icon);
     const element = createShapeAtCenter('svg' as DesignElement['type'], canvasSize, viewport, {
       svgData: svgString,
       svgFillColor: 'none',
-      svgStrokeColor: '#ffffff',
+      svgStrokeColor: color,
     });
     onAddElement(element);
   }, [canvasSize, viewport, onAddElement]);

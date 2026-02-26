@@ -9,12 +9,12 @@ import { VirtualGrid } from './VirtualGrid';
 interface IconLibraryModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onSelect: (icon: IconData) => void;
+  onSelect: (icon: IconData, color: string) => void;
 }
 
 export function IconLibraryModal({ isOpen, onClose, onSelect }: IconLibraryModalProps) {
   const { query, setQuery, results, isLoading, totalIndexed } = useIconSearch();
-  const [hoveredIcon, setHoveredIcon] = useState<IconData | null>(null);
+  const [selectedIcon, setSelectedIcon] = useState<IconData | null>(null);
   const [selectedColor, setSelectedColor] = useState('#ffffff');
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -25,33 +25,54 @@ export function IconLibraryModal({ isOpen, onClose, onSelect }: IconLibraryModal
   }, [isOpen]);
 
   useEffect(() => {
+    if (!isOpen) {
+      setSelectedIcon(null);
+      setSelectedColor('#ffffff');
+    }
+  }, [isOpen]);
+
+  useEffect(() => {
     if (!isOpen) return;
     const handleKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') onClose();
+      if (e.key === 'Escape') {
+        if (selectedIcon) {
+          setSelectedIcon(null);
+        } else {
+          onClose();
+        }
+      }
     };
     window.addEventListener('keydown', handleKey);
     return () => window.removeEventListener('keydown', handleKey);
-  }, [isOpen, onClose]);
+  }, [isOpen, onClose, selectedIcon]);
 
-  const handleSelect = useCallback((icon: IconData) => {
-    onSelect(icon);
+  const handleInsert = useCallback(() => {
+    if (!selectedIcon) return;
+    onSelect(selectedIcon, selectedColor);
     onClose();
-  }, [onSelect, onClose]);
+  }, [selectedIcon, selectedColor, onSelect, onClose]);
 
-  const renderItem = useCallback((icon: IconData) => (
-    <button
-      onClick={() => handleSelect(icon)}
-      onMouseEnter={() => setHoveredIcon(icon)}
-      onMouseLeave={() => setHoveredIcon(prev => prev?.id === icon.id ? null : prev)}
-      className="w-full h-full flex flex-col items-center justify-center gap-1 rounded-lg border border-gray-700/50 bg-gray-800/40 hover:bg-gray-700/60 hover:border-gray-500/60 transition-all duration-150 cursor-pointer group"
-      title={icon.name}
-    >
-      <SvgIcon icon={icon} size={28} color="#d1d5db" />
-      <span className="text-[9px] text-gray-500 group-hover:text-gray-300 truncate w-full text-center px-0.5 leading-tight transition-colors">
-        {icon.name}
-      </span>
-    </button>
-  ), [handleSelect]);
+  const renderItem = useCallback((icon: IconData) => {
+    const isActive = selectedIcon?.id === icon.id;
+    return (
+      <button
+        onClick={() => setSelectedIcon(icon)}
+        className={`w-full h-full flex flex-col items-center justify-center gap-1 rounded-lg border transition-all duration-150 cursor-pointer group ${
+          isActive
+            ? 'border-blue-500/70 bg-blue-500/10'
+            : 'border-gray-700/50 bg-gray-800/40 hover:bg-gray-700/60 hover:border-gray-500/60'
+        }`}
+        title={icon.name}
+      >
+        <SvgIcon icon={icon} size={28} color={isActive ? '#3B82F6' : '#d1d5db'} />
+        <span className={`text-[9px] truncate w-full text-center px-0.5 leading-tight transition-colors ${
+          isActive ? 'text-blue-400' : 'text-gray-500 group-hover:text-gray-300'
+        }`}>
+          {icon.name}
+        </span>
+      </button>
+    );
+  }, [selectedIcon]);
 
   if (!isOpen) return null;
 
@@ -109,45 +130,51 @@ export function IconLibraryModal({ isOpen, onClose, onSelect }: IconLibraryModal
             )}
           </div>
 
-          {hoveredIcon && (
-            <div className="w-52 border-l border-gray-800 px-4 py-4 flex flex-col items-center gap-4 shrink-0">
-              <div className="w-24 h-24 flex items-center justify-center bg-gray-800/50 rounded-xl border border-gray-700/40">
-                <SvgIcon icon={hoveredIcon} size={56} color={selectedColor} />
-              </div>
-              <div className="text-center">
-                <p className="text-xs font-medium text-gray-200">{hoveredIcon.name}</p>
-                <p className="text-[10px] text-gray-500 mt-1">{hoveredIcon.id}</p>
-              </div>
-              <div className="flex flex-wrap gap-1 justify-center">
-                {hoveredIcon.tags.slice(0, 6).map(tag => (
-                  <span key={tag} className="text-[9px] bg-gray-800 text-gray-400 px-1.5 py-0.5 rounded">
-                    {tag}
-                  </span>
-                ))}
-              </div>
-              <div className="w-full">
-                <label className="text-[10px] text-gray-500 block mb-1.5">Preview Color</label>
-                <div className="flex gap-1.5">
-                  {['#ffffff', '#3B82F6', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6'].map(c => (
-                    <button
-                      key={c}
-                      onClick={() => setSelectedColor(c)}
-                      className={`w-5 h-5 rounded-full border-2 transition-all ${
-                        selectedColor === c ? 'border-white scale-110' : 'border-gray-600'
-                      }`}
-                      style={{ backgroundColor: c }}
-                    />
+          <div className="w-52 border-l border-gray-800 px-4 py-4 flex flex-col items-center gap-4 shrink-0">
+            {selectedIcon ? (
+              <>
+                <div className="w-24 h-24 flex items-center justify-center bg-gray-800/50 rounded-xl border border-gray-700/40">
+                  <SvgIcon icon={selectedIcon} size={56} color={selectedColor} />
+                </div>
+                <div className="text-center">
+                  <p className="text-xs font-medium text-gray-200">{selectedIcon.name}</p>
+                  <p className="text-[10px] text-gray-500 mt-1">{selectedIcon.id}</p>
+                </div>
+                <div className="flex flex-wrap gap-1 justify-center">
+                  {selectedIcon.tags.slice(0, 6).map(tag => (
+                    <span key={tag} className="text-[9px] bg-gray-800 text-gray-400 px-1.5 py-0.5 rounded">
+                      {tag}
+                    </span>
                   ))}
                 </div>
+                <div className="w-full">
+                  <label className="text-[10px] text-gray-500 block mb-1.5">Color</label>
+                  <div className="flex gap-1.5">
+                    {['#ffffff', '#3B82F6', '#10B981', '#F59E0B', '#EF4444', '#6B7280'].map(c => (
+                      <button
+                        key={c}
+                        onClick={() => setSelectedColor(c)}
+                        className={`w-5 h-5 rounded-full border-2 transition-all ${
+                          selectedColor === c ? 'border-white scale-110' : 'border-gray-600'
+                        }`}
+                        style={{ backgroundColor: c }}
+                      />
+                    ))}
+                  </div>
+                </div>
+                <button
+                  onClick={handleInsert}
+                  className="w-full mt-auto py-2 bg-blue-600 hover:bg-blue-500 text-white text-xs font-medium rounded-lg transition-colors"
+                >
+                  Insert Icon
+                </button>
+              </>
+            ) : (
+              <div className="flex flex-col items-center justify-center h-full text-center gap-2">
+                <p className="text-[11px] text-gray-500 leading-relaxed">Click an icon to preview and configure it</p>
               </div>
-              <button
-                onClick={() => handleSelect(hoveredIcon)}
-                className="w-full mt-auto py-2 bg-blue-600 hover:bg-blue-500 text-white text-xs font-medium rounded-lg transition-colors"
-              >
-                Insert Icon
-              </button>
-            </div>
-          )}
+            )}
+          </div>
         </div>
       </div>
     </div>,
