@@ -225,7 +225,7 @@ const AdvancedModeLayout: React.FC<AdvancedModeLayoutProps> = ({
     if (selectedElements.length === 1) {
       syncingRef.current = true;
       selectClip(selectedElements[0]);
-    } else if (selectedElements.length === 0) {
+    } else {
       syncingRef.current = true;
       selectClip(null);
     }
@@ -236,6 +236,8 @@ const AdvancedModeLayout: React.FC<AdvancedModeLayoutProps> = ({
       syncingRef.current = false;
       return;
     }
+
+    if (selectedElements.length > 1) return;
 
     const selectedClipId = animationState.timeline.selectedClipId;
 
@@ -456,13 +458,14 @@ const AdvancedModeLayout: React.FC<AdvancedModeLayoutProps> = ({
           {activeSequence ? (
             <div className="h-full" style={{ display: 'grid', gridTemplateColumns: `${(leftColumnWidth / (leftColumnWidth + centerColumnWidth)) * 100}% 1fr` }}>
               <div className="overflow-hidden" data-tutorial-target="general-timeline">
-                <GeneralTimeline elements={elements} compactMode={true} />
+                <GeneralTimeline elements={elements} compactMode={true} selectedCanvasElements={selectedElements} />
               </div>
               <div className="overflow-hidden" data-tutorial-target="animation-timeline">
                 <AnimationTimeline
                   elements={elements}
                   activeSequence={activeSequence}
                   onEditSequence={handleEditSequence}
+                  multipleSelected={selectedElements.length > 1}
                 />
               </div>
             </div>

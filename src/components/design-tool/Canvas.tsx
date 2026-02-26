@@ -601,9 +601,7 @@ const Canvas: React.FC<CanvasProps> = ({
                 }
               }}
               onUpdate={(updates) => {
-                // Clamp group position to canvas
                 if (updates.x !== undefined || updates.y !== undefined) {
-                  // Apply grid snapping if enabled
                   if (onGridSnap && gridSettings?.snapEnabled) {
                     const snapped = onGridSnap(
                       updates.x !== undefined ? updates.x : element.x,
@@ -615,6 +613,24 @@ const Canvas: React.FC<CanvasProps> = ({
                   const newY = updates.y !== undefined ? updates.y : element.y;
                   const clamped = clampToCanvas(newX, newY, element.width, element.height);
                   updates = { ...updates, ...clamped };
+
+                  const isDragOnly = updates.width === undefined && updates.height === undefined;
+                  if (isDragOnly && selectedElements.length > 1 && selectedElements.includes(element.id)) {
+                    const deltaX = (updates.x ?? element.x) - element.x;
+                    const deltaY = (updates.y ?? element.y) - element.y;
+                    if (deltaX !== 0 || deltaY !== 0) {
+                      selectedElements.forEach(selId => {
+                        if (selId !== element.id) {
+                          const other = elements.find(el => el.id === selId);
+                          if (other) {
+                            const otherClamped = clampToCanvas(other.x + deltaX, other.y + deltaY, other.width, other.height);
+                            trackManipulatedProperties(selId, otherClamped);
+                            updateElement(selId, otherClamped);
+                          }
+                        }
+                      });
+                    }
+                  }
                 }
                 trackManipulatedProperties(element.id, updates);
                 updateElement(element.id, updates);
@@ -710,9 +726,7 @@ const Canvas: React.FC<CanvasProps> = ({
               }
             }}
             onUpdate={(updates) => {
-              // Clamp element position to canvas
               if (updates.x !== undefined || updates.y !== undefined) {
-                // Apply grid snapping if enabled
                 if (onGridSnap && gridSettings?.snapEnabled) {
                   const snapped = onGridSnap(
                     updates.x !== undefined ? updates.x : element.x,
@@ -724,6 +738,24 @@ const Canvas: React.FC<CanvasProps> = ({
                 const newY = updates.y !== undefined ? updates.y : element.y;
                 const clamped = clampToCanvas(newX, newY, element.width, element.height);
                 updates = { ...updates, ...clamped };
+
+                const isDragOnly = updates.width === undefined && updates.height === undefined;
+                if (isDragOnly && selectedElements.length > 1 && selectedElements.includes(element.id)) {
+                  const deltaX = (updates.x ?? element.x) - element.x;
+                  const deltaY = (updates.y ?? element.y) - element.y;
+                  if (deltaX !== 0 || deltaY !== 0) {
+                    selectedElements.forEach(selId => {
+                      if (selId !== element.id) {
+                        const other = elements.find(el => el.id === selId);
+                        if (other) {
+                          const otherClamped = clampToCanvas(other.x + deltaX, other.y + deltaY, other.width, other.height);
+                          trackManipulatedProperties(selId, otherClamped);
+                          updateElement(selId, otherClamped);
+                        }
+                      }
+                    });
+                  }
+                }
               }
               trackManipulatedProperties(element.id, updates);
               updateElement(element.id, updates);

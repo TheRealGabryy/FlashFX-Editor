@@ -11,6 +11,7 @@ interface AnimationTimelineProps {
   elements: DesignElement[];
   activeSequence?: Sequence | null;
   onEditSequence?: (sequence: Sequence) => void;
+  multipleSelected?: boolean;
 }
 
 const EASING_OPTIONS: { value: EasingType; label: string }[] = EASING_CONFIGS.map(config => ({
@@ -23,7 +24,7 @@ type ClickMode = 'delete' | 'select';
 const SNAP_THRESHOLD = 0.2;
 const LAYOUT_ZOOM = 0.8; // The layout is zoomed to 80%
 
-const AnimationTimeline: React.FC<AnimationTimelineProps> = ({ elements, activeSequence, onEditSequence }) => {
+const AnimationTimeline: React.FC<AnimationTimelineProps> = ({ elements, activeSequence, onEditSequence, multipleSelected = false }) => {
   const { state, addKeyframe, deleteKeyframe, deleteTrack, deleteAllKeyframes, updateKeyframe, selectKeyframes, setPixelsPerSecond } = useAnimation();
   const { togglePlay, seekTo, seekToStart, seekToEnd, isPlaying, currentTime, duration, fps } = usePlayback();
 
@@ -575,7 +576,13 @@ const AnimationTimeline: React.FC<AnimationTimelineProps> = ({ elements, activeS
         </div>
       </div>
 
-      {!selectedClipId ? (
+      {multipleSelected ? (
+        <div className="flex-1 flex flex-col items-center justify-center text-gray-500 text-sm p-8">
+          <Diamond className="w-8 h-8 mb-3 text-amber-500/60" />
+          <p className="font-medium text-gray-400">Multiple shapes selected</p>
+          <p className="text-xs text-gray-600 mt-1">Select a single shape to edit its keyframes</p>
+        </div>
+      ) : !selectedClipId ? (
         <div className="flex-1 flex flex-col items-center justify-center text-gray-500 text-sm p-8">
           <Diamond className="w-8 h-8 mb-3 text-gray-600" />
           <p className="font-medium">Select a clip to edit keyframes</p>

@@ -310,7 +310,6 @@ const DesignModeLayout: React.FC<DesignModeLayoutProps> = ({
     }
   }, [currentMode, activeSequence]);
 
-  // Sync canvas selection to timeline clip selection
   useEffect(() => {
     if (syncingRef.current) {
       syncingRef.current = false;
@@ -318,37 +317,32 @@ const DesignModeLayout: React.FC<DesignModeLayoutProps> = ({
     }
 
     if (selectedElements.length === 1) {
-      // Single element selected - sync to timeline
       syncingRef.current = true;
       selectClip(selectedElements[0]);
-    } else if (selectedElements.length === 0) {
-      // No elements selected - deselect timeline clip
+    } else {
       syncingRef.current = true;
       selectClip(null);
     }
-    // Note: Multiple selections are not synced to timeline (timeline only supports single clip selection)
   }, [selectedElements, selectClip]);
 
-  // Sync timeline clip selection to canvas selection
   useEffect(() => {
     if (syncingRef.current) {
       syncingRef.current = false;
       return;
     }
 
+    if (selectedElements.length > 1) return;
+
     const selectedClipId = animationState.timeline.selectedClipId;
 
     if (selectedClipId && selectedElements.length === 1 && selectedElements[0] === selectedClipId) {
-      // Already in sync, no need to update
       return;
     }
 
     if (selectedClipId) {
-      // Clip selected in timeline - sync to canvas
       syncingRef.current = true;
       setSelectedElements([selectedClipId]);
     } else if (selectedElements.length > 0) {
-      // No clip selected in timeline - deselect canvas
       syncingRef.current = true;
       setSelectedElements([]);
     }
@@ -572,7 +566,7 @@ const DesignModeLayout: React.FC<DesignModeLayoutProps> = ({
               <div className="h-full" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr' }}>
                 {/* General Timeline (Left 50%) */}
                 <div className="overflow-hidden" data-tutorial-target="general-timeline">
-                  <GeneralTimeline elements={elements} />
+                  <GeneralTimeline elements={elements} selectedCanvasElements={selectedElements} />
                 </div>
                 {/* Animation Timeline (Right 50%) */}
                 <div className="overflow-hidden" data-tutorial-target="animation-timeline">
@@ -580,6 +574,7 @@ const DesignModeLayout: React.FC<DesignModeLayoutProps> = ({
                     elements={elements}
                     activeSequence={activeSequence}
                     onEditSequence={handleEditSequence}
+                    multipleSelected={selectedElements.length > 1}
                   />
                 </div>
               </div>

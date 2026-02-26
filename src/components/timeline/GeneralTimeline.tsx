@@ -13,12 +13,13 @@ import { getAllElementsFlat } from '../../utils/groupUtils';
 interface GeneralTimelineProps {
   elements: DesignElement[];
   compactMode?: boolean;
+  selectedCanvasElements?: string[];
 }
 
 const SNAP_THRESHOLD = 0.2;
 const LAYOUT_ZOOM = 0.8; // The layout is zoomed to 80%
 
-const GeneralTimeline: React.FC<GeneralTimelineProps> = ({ elements, compactMode = false }) => {
+const GeneralTimeline: React.FC<GeneralTimelineProps> = ({ elements, compactMode = false, selectedCanvasElements = [] }) => {
   const { state, selectClip, updateClip, initAnimation, splitClip, deleteAllKeyframes, selectKeyframes, removeAnimation, addMarker, updateMarker, deleteMarker, toggleSnapToMarkers, getMarkerAtTime } = useAnimation();
   const { play, pause, stop, togglePlay, seekTo, seekToStart, seekToEnd, stepForward, stepBackward, isPlaying, currentTime, currentFrame, totalFrames, duration, fps } = usePlayback();
 
@@ -504,7 +505,7 @@ const GeneralTimeline: React.FC<GeneralTimelineProps> = ({ elements, compactMode
           <div className="overflow-y-auto" style={{ height: 'calc(100% - 32px)' }}>
             {displayElements.map(({ element, depth }) => {
               const animation = state.animations[element.id];
-              const isSelected = selectedClipId === element.id;
+              const isSelected = selectedClipId === element.id || selectedCanvasElements.includes(element.id);
               const isLocked = animation?.locked || false;
               const isMuted = animation?.muted || false;
               const isGroup = element.type === 'group';
@@ -664,7 +665,7 @@ const GeneralTimeline: React.FC<GeneralTimelineProps> = ({ elements, compactMode
                   const clipDuration = animation?.clipDuration || 5;
                   const clipX = clipStart * pixelsPerSecond;
                   const clipWidth = clipDuration * pixelsPerSecond;
-                  const isSelected = selectedClipId === element.id;
+                  const isSelected = selectedClipId === element.id || selectedCanvasElements.includes(element.id);
                   const isHovered = hoveredClipId === element.id;
                   const isMuted = animation?.muted || false;
                   const isLocked = animation?.locked || false;
