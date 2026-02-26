@@ -1,6 +1,6 @@
 import React, { useState, useCallback, useRef } from 'react';
 import { DesignElement } from '../../types/design';
-import { ChevronDown, ChevronRight, Type, Palette, Sparkles, Layout, Upload, Plus, Trash2, Image as ImageIcon } from 'lucide-react';
+import { ChevronDown, ChevronRight, Type, Palette, Sparkles, Layout, Info, Upload, Plus, Trash2, Image as ImageIcon } from 'lucide-react';
 import { useFonts } from '../../hooks/useFonts';
 import { v4 as uuidv4 } from 'uuid';
 
