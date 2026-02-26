@@ -150,6 +150,15 @@ const Canvas: React.FC<CanvasProps> = ({
   const lastPenPoint = useRef<{ x: number; y: number } | null>(null);
   const [shapeCursorContainerPos, setShapeCursorContainerPos] = useState<{ x: number; y: number } | null>(null);
 
+  const shapeDragStartRef = useRef<{
+    startCanvas: { x: number; y: number };
+    startClient: { x: number; y: number };
+  } | null>(null);
+  const [shapeDragPreview, setShapeDragPreview] = useState<{
+    startCanvas: { x: number; y: number };
+    currentCanvas: { x: number; y: number };
+  } | null>(null);
+
   const canvasCenter = { x: canvasWidth / 2, y: canvasHeight / 2 };
 
   const handleWheel = useCallback((e: React.WheelEvent) => {
@@ -951,7 +960,7 @@ const Canvas: React.FC<CanvasProps> = ({
             />
           )}
 
-          {/* Shape placement overlay — click to place shape at cursor position */}
+          {/* Shape placement overlay — click to place, drag to set custom size */}
           {isShapePlacementTool(activeTool) && (
             <div
               style={{
@@ -963,13 +972,14 @@ const Canvas: React.FC<CanvasProps> = ({
                 zIndex: 998,
                 cursor: 'crosshair'
               }}
-              onClick={(e) => {
+              onMouseDown={(e) => {
                 e.stopPropagation();
                 const { x: canvasX, y: canvasY } = getCanvasCoordinates(e.clientX, e.clientY);
-                const element = createShapeAtPosition(activeTool as DesignElement['type'], canvasX, canvasY);
-                onAddElement?.(element);
-                setShapeCursorContainerPos(null);
-                onSetActiveTool?.('select');
+                shapeDragStartRef.current = {
+                  startCanvas: { x: canvasX, y: canvasY },
+                  startClient: { x: e.clientX, y: e.clientY },
+                };
+                setShapeDragPreview(null);
               }}
               onMouseMove={(e) => {
                 const container = containerRef.current;
@@ -981,10 +991,117 @@ const Canvas: React.FC<CanvasProps> = ({
                     y: (e.clientY - rect.top) / cssZoom
                   });
                 }
+                const dragStart = shapeDragStartRef.current;
+                if (!dragStart) return;
+                const dx = e.clientX - dragStart.startClient.x;
+                const dy = e.clientY - dragStart.startClient.y;
+                if (Math.sqrt(dx * dx + dy * dy) > 5) {
+                  const { x: canvasX, y: canvasY } = getCanvasCoordinates(e.clientX, e.clientY);
+                  setShapeDragPreview({
+                    startCanvas: dragStart.startCanvas,
+                    currentCanvas: { x: canvasX, y: canvasY },
+                  });
+                }
               }}
-              onMouseLeave={() => setShapeCursorContainerPos(null)}
+              onMouseUp={(e) => {
+                e.stopPropagation();
+                const dragStart = shapeDragStartRef.current;
+                shapeDragStartRef.current = null;
+                setShapeDragPreview(null);
+                setShapeCursorContainerPos(null);
+
+                if (!dragStart) return;
+                const { x: canvasX, y: canvasY } = getCanvasCoordinates(e.clientX, e.clientY);
+                const dragW = Math.abs(canvasX - dragStart.startCanvas.x);
+                const dragH = Math.abs(canvasY - dragStart.startCanvas.y);
+                const dx = e.clientX - dragStart.startClient.x;
+                const dy = e.clientY - dragStart.startClient.y;
+                const wasDrag = Math.sqrt(dx * dx + dy * dy) > 5 && dragW > 10 && dragH > 10;
+
+                if (wasDrag) {
+                  const x = Math.min(dragStart.startCanvas.x, canvasX);
+                  const y = Math.min(dragStart.startCanvas.y, canvasY);
+                  const base = createShapeAtPosition(activeTool as DesignElement['type'], x + dragW / 2, y + dragH / 2);
+                  const element = { ...base, x, y, width: dragW, height: dragH };
+                  onAddElement?.(element);
+                } else {
+                  const element = createShapeAtPosition(activeTool as DesignElement['type'], dragStart.startCanvas.x, dragStart.startCanvas.y);
+                  onAddElement?.(element);
+                }
+                onSetActiveTool?.('select');
+              }}
+              onMouseLeave={() => {
+                setShapeCursorContainerPos(null);
+                if (!shapeDragPreview) {
+                  shapeDragStartRef.current = null;
+                }
+              }}
             />
           )}
+
+          {/* Drag-to-create shape preview */}
+          {isShapePlacementTool(activeTool) && shapeDragPreview && (() => {
+            const { startCanvas, currentCanvas } = shapeDragPreview;
+            const x = Math.min(startCanvas.x, currentCanvas.x);
+            const y = Math.min(startCanvas.y, currentCanvas.y);
+            const w = Math.abs(currentCanvas.x - startCanvas.x);
+            const h = Math.abs(currentCanvas.y - startCanvas.y);
+            const sw = Math.max(1, 2 / zoom);
+            const fs = Math.max(10, 13 / zoom);
+            const da = `${8 / zoom},${4 / zoom}`;
+            return (
+              <svg
+                style={{ position: 'absolute', top: 0, left: 0, width: canvasWidth, height: canvasHeight, pointerEvents: 'none', overflow: 'visible', zIndex: 999 }}
+              >
+                {activeTool === 'circle' ? (
+                  <ellipse
+                    cx={x + w / 2}
+                    cy={y + h / 2}
+                    rx={w / 2}
+                    ry={h / 2}
+                    fill="rgba(59,130,246,0.08)"
+                    stroke="#3B82F6"
+                    strokeWidth={sw}
+                    strokeDasharray={da}
+                  />
+                ) : (
+                  <rect
+                    x={x}
+                    y={y}
+                    width={w}
+                    height={h}
+                    fill="rgba(59,130,246,0.08)"
+                    stroke="#3B82F6"
+                    strokeWidth={sw}
+                    strokeDasharray={da}
+                  />
+                )}
+                <rect
+                  x={x + w / 2 - (fs * 3.2)}
+                  y={y - fs * 1.8}
+                  width={fs * 6.4}
+                  height={fs * 1.4}
+                  rx={fs * 0.25}
+                  fill="rgba(15,23,42,0.75)"
+                />
+                <text
+                  x={x + w / 2}
+                  y={y - fs * 0.7}
+                  fill="#93C5FD"
+                  fontSize={fs}
+                  fontFamily="Inter, sans-serif"
+                  textAnchor="middle"
+                  style={{ userSelect: 'none' }}
+                >
+                  {Math.round(w)} × {Math.round(h)}
+                </text>
+                <circle cx={x} cy={y} r={sw * 2} fill="#3B82F6" />
+                <circle cx={x + w} cy={y} r={sw * 2} fill="#3B82F6" />
+                <circle cx={x} cy={y + h} r={sw * 2} fill="#3B82F6" />
+                <circle cx={x + w} cy={y + h} r={sw * 2} fill="#3B82F6" />
+              </svg>
+            );
+          })()}
 
           {/* Line drawing preview */}
           {activeTool === 'line' && lineDrawingPoints.length > 0 && (
