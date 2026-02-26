@@ -723,8 +723,8 @@ const UIDesignToolContent: React.FC<UIDesignToolContentProps> = ({ onBackToMain,
     if (!canvasElement) return;
 
     const rect = canvasElement.getBoundingClientRect();
-    const x = (clientX - rect.left - pan.x) / zoom;
-    const y = (clientY - rect.top - pan.y) / zoom;
+    const x = (clientX - rect.left) / zoom;
+    const y = (clientY - rect.top) / zoom;
 
     const defaultWidth = type === 'circle' ? 600 : type === 'text' ? 600 : type === 'line' ? 300 : 800;
     const defaultHeight = type === 'circle' ? 600 : type === 'text' ? 120 : type === 'line' ? 2 : 500;
@@ -788,8 +788,8 @@ const UIDesignToolContent: React.FC<UIDesignToolContentProps> = ({ onBackToMain,
         if (!canvasElement) return;
 
         const rect = canvasElement.getBoundingClientRect();
-        const x = (clientX - rect.left - pan.x) / zoom;
-        const y = (clientY - rect.top - pan.y) / zoom;
+        const x = (clientX - rect.left) / zoom;
+        const y = (clientY - rect.top) / zoom;
 
         const maxImageSize = 400;
         let width = asset.width;
@@ -850,8 +850,8 @@ const UIDesignToolContent: React.FC<UIDesignToolContentProps> = ({ onBackToMain,
     if (!canvasElement) return;
 
     const rect = canvasElement.getBoundingClientRect();
-    const x = (clientX - rect.left - pan.x) / zoom;
-    const y = (clientY - rect.top - pan.y) / zoom;
+    const x = (clientX - rect.left) / zoom;
+    const y = (clientY - rect.top) / zoom;
 
     const elements = JSON.parse(JSON.stringify(preset.elements)) as DesignElement[];
 
@@ -879,35 +879,49 @@ const UIDesignToolContent: React.FC<UIDesignToolContentProps> = ({ onBackToMain,
     console.log('Paste at position:', clientX, clientY, inPlace);
   }, []);
 
-  const handleFitToScreen = useCallback(() => {
-    const container = document.querySelector('.editor-cursor-default')?.parentElement;
-    if (!container) return;
+  const getCenteredPan = useCallback((containerWidth: number, containerHeight: number, targetZoom: number) => ({
+    x: (containerWidth - canvasSize.width * targetZoom) / 2,
+    y: (containerHeight - canvasSize.height * targetZoom) / 2,
+  }), [canvasSize]);
 
+  const handleFitToScreen = useCallback(() => {
+    const container = document.getElementById('canvas-container');
+    if (!container) return;
     const containerWidth = container.clientWidth;
     const containerHeight = container.clientHeight;
-    const padding = 100;
-
+    const padding = 80;
     const zoomX = (containerWidth - padding * 2) / canvasSize.width;
     const zoomY = (containerHeight - padding * 2) / canvasSize.height;
     const newZoom = Math.min(zoomX, zoomY, 1);
-
     setZoom(newZoom);
-    setPan({ x: 0, y: 0 });
-  }, [canvasSize]);
+    setPan(getCenteredPan(containerWidth, containerHeight, newZoom));
+  }, [canvasSize, getCenteredPan]);
 
   const handleResetZoom = useCallback(() => {
-    setZoom(1);
-    setPan({ x: 0, y: 0 });
-  }, []);
+    const container = document.getElementById('canvas-container');
+    const newZoom = 1;
+    setZoom(newZoom);
+    if (container) {
+      setPan(getCenteredPan(container.clientWidth, container.clientHeight, newZoom));
+    } else {
+      setPan({ x: 0, y: 0 });
+    }
+  }, [getCenteredPan]);
 
   const handleClearCanvas = useCallback(() => {
     updateCanvas([], []);
   }, [updateCanvas]);
 
   const handleResetTransform = useCallback(() => {
-    setZoom(1);
-    setPan({ x: 0, y: 0 });
-  }, []);
+    const container = document.getElementById('canvas-container');
+    const newZoom = 1;
+    setZoom(newZoom);
+    if (container) {
+      setPan(getCenteredPan(container.clientWidth, container.clientHeight, newZoom));
+    } else {
+      setPan({ x: 0, y: 0 });
+    }
+  }, [getCenteredPan]);
 
   // Enhanced keyboard shortcuts with shortcut modal
   React.useEffect(() => {

@@ -98,6 +98,7 @@ const Canvas: React.FC<CanvasProps> = ({
   onAddElement
 }) => {
   const { getAnimatedElementState, hasKeyframesForProperty, addKeyframe, getTrack, state: animationState } = useAnimation();
+  const containerRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLDivElement>(null);
   const artboardRef = useRef<HTMLDivElement>(null);
   const [isDragging, setIsDragging] = useState(false);
@@ -130,12 +131,21 @@ const Canvas: React.FC<CanvasProps> = ({
   const handleWheel = useCallback((e: React.WheelEvent) => {
     if (!setZoom) return;
     e.preventDefault();
-    if (e.deltaY < 0) {
-      setZoom(Math.min(3, zoom + 0.05));
-    } else {
-      setZoom(Math.max(0.25, zoom - 0.05));
-    }
-  }, [zoom, setZoom]);
+    const container = containerRef.current;
+    if (!container) return;
+    const rect = container.getBoundingClientRect();
+    const mouseX = e.clientX - rect.left;
+    const mouseY = e.clientY - rect.top;
+    const canvasX = (mouseX - pan.x) / zoom;
+    const canvasY = (mouseY - pan.y) / zoom;
+    const newZoom = e.deltaY < 0
+      ? Math.min(3, zoom + 0.05)
+      : Math.max(0.05, zoom - 0.05);
+    const newPanX = mouseX - canvasX * newZoom;
+    const newPanY = mouseY - canvasY * newZoom;
+    setZoom(newZoom);
+    setPan({ x: newPanX, y: newPanY });
+  }, [zoom, setZoom, pan.x, pan.y, setPan]);
 
   // Callbacks to track element manipulation state
   const handleManipulationStart = useCallback((elementId: string) => {
@@ -264,15 +274,13 @@ const Canvas: React.FC<CanvasProps> = ({
   }, [canvasWidth, canvasHeight]);
 
   const getCanvasCoordinates = useCallback((clientX: number, clientY: number) => {
-    const artboard = artboardRef.current;
-    if (!artboard) return { x: 0, y: 0 };
-
-    const rect = artboard.getBoundingClientRect();
-    const canvasX = (clientX - rect.left) / zoom;
-    const canvasY = (clientY - rect.top) / zoom;
-    
+    const container = containerRef.current;
+    if (!container) return { x: 0, y: 0 };
+    const rect = container.getBoundingClientRect();
+    const canvasX = (clientX - rect.left - pan.x) / zoom;
+    const canvasY = (clientY - rect.top - pan.y) / zoom;
     return { x: canvasX, y: canvasY };
-  }, [zoom]);
+  }, [pan.x, pan.y, zoom]);
 
   const finalizeDrawnLine = useCallback((absPoints: { x: number; y: number }[], toolType: 'line' | 'pen') => {
     if (absPoints.length < 2) return;
@@ -451,8 +459,9 @@ const Canvas: React.FC<CanvasProps> = ({
 
   const handleMouseMove = useCallback((e: React.MouseEvent) => {
     if (selectionBox) {
-      const canvasX = (e.clientX - (artboardRef.current?.getBoundingClientRect().left || 0)) / zoom;
-      const canvasY = (e.clientY - (artboardRef.current?.getBoundingClientRect().top || 0)) / zoom;
+      const rect = containerRef.current?.getBoundingClientRect();
+      const canvasX = rect ? (e.clientX - rect.left - pan.x) / zoom : 0;
+      const canvasY = rect ? (e.clientY - rect.top - pan.y) / zoom : 0;
 
       setSelectionBox(prev => prev ? {
         ...prev,
@@ -469,7 +478,7 @@ const Canvas: React.FC<CanvasProps> = ({
       // If we're actually panning, don't clear selection
       setShouldClearSelection(false);
     }
-  }, [isDragging, dragStart, setPan, selectionBox, zoom, canvasWidth, canvasHeight]);
+  }, [isDragging, dragStart, setPan, selectionBox, zoom, pan.x, pan.y, canvasWidth, canvasHeight]);
 
   const handleMouseUp = useCallback(() => {
     if (selectionBox) {
@@ -737,19 +746,26 @@ const Canvas: React.FC<CanvasProps> = ({
   };
 
   return (
-    <div className={`w-full h-full relative overflow-hidden bg-gray-900 ${activeTool !== 'select' ? '' : 'editor-cursor-default'}`} style={{ cursor: activeTool !== 'select' ? 'crosshair' : undefined }} onWheel={handleWheel}>
+    <div
+      ref={containerRef}
+      id="canvas-container"
+      className={`w-full h-full relative overflow-hidden bg-gray-900 ${activeTool !== 'select' ? '' : 'editor-cursor-default'}`}
+      style={{ cursor: activeTool !== 'select' ? 'crosshair' : undefined }}
+      onWheel={handleWheel}
+      onMouseDown={handleMouseDown}
+      onMouseMove={handleMouseMove}
+      onMouseUp={handleMouseUp}
+      onContextMenu={(e) => handleContextMenu(e)}
+    >
       <div
         ref={canvasRef}
-        className={`w-full h-full flex items-center justify-center p-4 ${isDragging || selectionBox ? 'editor-cursor-dragging' : 'editor-cursor-default'}`}
-        onMouseDown={handleMouseDown}
-        onMouseMove={handleMouseMove}
-        onMouseUp={handleMouseUp}
-        onContextMenu={(e) => handleContextMenu(e)}
+        className={isDragging || selectionBox ? 'editor-cursor-dragging' : ''}
         style={{
+          position: 'absolute',
+          left: 0,
+          top: 0,
+          transformOrigin: '0 0',
           transform: `translate(${pan.x}px, ${pan.y}px) scale(${zoom})`,
-          transformOrigin: 'center center',
-          minWidth: `${canvasWidth * zoom + 200}px`,
-          minHeight: `${canvasHeight * zoom + 200}px`
         }}
       >
         {/* Artboard */}

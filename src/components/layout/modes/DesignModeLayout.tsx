@@ -236,10 +236,17 @@ const DesignModeLayout: React.FC<DesignModeLayoutProps> = ({
 
   // Initialize zoom on mount
   useEffect(() => {
+    const layersWidth = window.innerWidth * (leftColumnWidth / 100);
+    const propertiesWidth = window.innerWidth * (rightColumnWidth / 100);
+    const padding = 40;
+    const availableWidth = window.innerWidth - layersWidth - propertiesWidth - padding;
+    const availableHeight = window.innerHeight - 100;
     const initialZoom = calculateInitialZoom();
+    const initialPanX = (availableWidth - canvasSize.width * initialZoom) / 2;
+    const initialPanY = (availableHeight - canvasSize.height * initialZoom) / 2;
     setZoom(initialZoom);
-    setPan({ x: 0, y: 0 });
-  }, [calculateInitialZoom, setZoom, setPan]);
+    setPan({ x: initialPanX, y: initialPanY });
+  }, [calculateInitialZoom, setZoom, setPan, leftColumnWidth, rightColumnWidth, canvasSize.width, canvasSize.height]);
 
   // Handle window resize
   useEffect(() => {
@@ -285,7 +292,7 @@ const DesignModeLayout: React.FC<DesignModeLayoutProps> = ({
       const centerY = (availableHeight - scaledCanvasHeight) / 2;
 
       setZoom(newZoom);
-      setPan({ x: -centerX / newZoom, y: -centerY / newZoom });
+      setPan({ x: centerX, y: centerY });
     } else if (currentMode === 'design') {
       // Restore design mode state
       setZoom(designModeZoom);
