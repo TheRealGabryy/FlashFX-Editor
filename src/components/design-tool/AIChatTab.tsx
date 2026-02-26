@@ -43,93 +43,61 @@ interface AIChatTabProps {
 
 const CHAT_STORAGE_KEY = 'flashfx_ai_chat_history';
 
-type AITier = 'free' | 'limited' | 'ultra';
 
-interface TierConfig {
-  label: string;
-  tag: string;
-  tagBg: string;
-  tagText: string;
-  tagBorder: string;
-  activeBg: string;
-  activeText: string;
-  activeBorder: string;
-  inputBorder: string;
-  inputRing: string;
-  model: string;
-}
-
-const TIER_CONFIG: Record<AITier, TierConfig> = {
-  free: {
-    label: 'Basic',
-    tag: 'Free',
-    tagBg: 'bg-green-500/10',
-    tagText: 'text-green-400',
-    tagBorder: 'border-green-500/30',
-    activeBg: 'bg-green-500/10',
-    activeText: 'text-green-400',
-    activeBorder: 'border-green-500/40',
-    inputBorder: 'border-green-500/50',
-    inputRing: 'focus-within:border-green-400',
-    model: 'Standard model',
-  },
-  limited: {
-    label: 'Medium',
-    tag: 'Limited',
-    tagBg: 'bg-yellow-500/10',
-    tagText: 'text-yellow-400',
-    tagBorder: 'border-yellow-500/30',
-    activeBg: 'bg-yellow-500/10',
-    activeText: 'text-yellow-400',
-    activeBorder: 'border-yellow-500/40',
-    inputBorder: 'border-yellow-500/50',
-    inputRing: 'focus-within:border-yellow-400',
-    model: 'Advanced model',
-  },
-  ultra: {
-    label: 'Premium',
-    tag: 'Ultra',
-    tagBg: 'bg-purple-500/10',
-    tagText: 'text-purple-400',
-    tagBorder: 'border-purple-500/30',
-    activeBg: 'bg-purple-500/10',
-    activeText: 'text-purple-400',
-    activeBorder: 'border-purple-500/40',
-    inputBorder: 'border-purple-500/50',
-    inputRing: 'focus-within:border-purple-400',
-    model: 'Premium model (GPT-4o)',
-  },
-};
+type AITier2 = 'free' | 'limited' | 'ultra';
 
 const AIChatTab: React.FC<AIChatTabProps> = ({
   onAddElement,
   onAddMultipleElements,
   onUpdateElement
 }) => {
-  const [activeTier, setActiveTier] = useState<AITier>('free');
+  const [activeTier, setActiveTier] = useState<AITier2>('free');
   const [prompt, setPrompt] = useState('');
-  const tier = TIER_CONFIG[activeTier];
+
+  const isFree = activeTier === 'free';
+  const isLimited = activeTier === 'limited';
+  const isUltra = activeTier === 'ultra';
+
+  const tierLabel = isFree ? 'Basic' : isLimited ? 'Medium' : 'Premium';
+  const tierModel = isFree ? 'Standard model' : isLimited ? 'Advanced model' : 'Premium model (GPT-4o)';
 
   return (
     <div className="h-full flex flex-col">
       <div className="p-2 border-b border-gray-700/50 flex-shrink-0">
         <div className="flex gap-1">
-          {(Object.entries(TIER_CONFIG) as [AITier, TierConfig][]).map(([key, config]) => (
-            <button
-              key={key}
-              onClick={() => setActiveTier(key)}
-              className={`flex-1 py-1.5 px-1 rounded-md text-[10px] font-medium transition-all duration-200 flex items-center justify-center gap-1 ${
-                activeTier === key
-                  ? `${config.activeBg} ${config.activeText} border ${config.activeBorder}`
-                  : 'text-gray-400 hover:text-white hover:bg-gray-600/30'
-              }`}
-            >
-              <span>{config.label}</span>
-              <span className={`text-[8px] px-1 py-0.5 rounded border ${config.tagBg} ${config.tagText} ${config.tagBorder} font-semibold`}>
-                {config.tag}
-              </span>
-            </button>
-          ))}
+          <button
+            onClick={() => setActiveTier('free')}
+            className={`flex-1 py-1.5 px-1 rounded-md text-[10px] font-medium transition-all duration-200 flex items-center justify-center gap-1 ${
+              isFree
+                ? 'bg-green-500/10 text-green-400 border border-green-500/40'
+                : 'text-gray-400 hover:text-white hover:bg-gray-600/30'
+            }`}
+          >
+            <span>Basic</span>
+            <span className="text-[8px] px-1 py-0.5 rounded border font-semibold bg-green-500/10 text-green-400 border-green-500/30">Free</span>
+          </button>
+          <button
+            onClick={() => setActiveTier('limited')}
+            className={`flex-1 py-1.5 px-1 rounded-md text-[10px] font-medium transition-all duration-200 flex items-center justify-center gap-1 ${
+              isLimited
+                ? 'bg-yellow-500/10 text-yellow-400 border border-yellow-500/40'
+                : 'text-gray-400 hover:text-white hover:bg-gray-600/30'
+            }`}
+          >
+            <span>Medium</span>
+            <span className="text-[8px] px-1 py-0.5 rounded border font-semibold bg-yellow-500/10 text-yellow-400 border-yellow-500/30">Limited</span>
+          </button>
+          <button
+            onClick={() => setActiveTier('ultra')}
+            className={`flex-1 py-1.5 px-1 rounded-md text-[10px] font-medium transition-all duration-200 flex items-center justify-center gap-1 ${
+              isUltra
+                ? 'bg-purple-500/10 text-purple-400 border border-purple-500/40'
+                : 'text-gray-400 hover:text-white hover:bg-gray-600/30'
+            }`}
+          >
+            <span>Premium</span>
+            <span className="text-[8px] px-1 py-0.5 rounded border font-semibold bg-purple-500/10 text-purple-400 border-purple-500/30">Ultra</span>
+          </button>
         </div>
       </div>
 
@@ -151,19 +119,21 @@ const AIChatTab: React.FC<AIChatTabProps> = ({
             </a>
             {' '}to use the AI in early beta testing.
           </p>
-          <p className={`text-[10px] font-medium ${tier.activeText}`}>
-            {tier.label} plan · {tier.model}
+          <p className={`text-[10px] font-medium ${isFree ? 'text-green-400' : isLimited ? 'text-yellow-400' : 'text-purple-400'}`}>
+            {tierLabel} plan · {tierModel}
           </p>
         </div>
       </div>
 
       <div className="p-2 border-t border-gray-700/50 flex-shrink-0">
-        <div className={`flex items-end gap-2 rounded-lg border bg-gray-900/50 px-2 py-1.5 transition-colors ${tier.inputBorder} ${tier.inputRing}`}>
+        <div className={`flex items-end gap-2 rounded-lg border bg-gray-900/50 px-2 py-1.5 transition-colors ${
+          isFree ? 'border-green-500/50' : isLimited ? 'border-yellow-500/50' : 'border-purple-500/50'
+        }`}>
           <textarea
             value={prompt}
             onChange={(e) => setPrompt(e.target.value)}
             disabled
-            placeholder={`${tier.label} plan — contact pre-sales to unlock...`}
+            placeholder={`${tierLabel} plan — contact pre-sales to unlock...`}
             className="flex-1 bg-transparent text-xs text-gray-400 placeholder-gray-600 resize-none outline-none leading-relaxed"
             rows={2}
           />
