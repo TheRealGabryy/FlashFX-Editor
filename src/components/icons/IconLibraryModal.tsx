@@ -1,4 +1,5 @@
 import React, { useState, useCallback, useEffect, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import { X, Search, Loader2 } from 'lucide-react';
 import type { IconData } from './types';
 import { useIconSearch } from './useIconSearch';
@@ -54,7 +55,7 @@ export function IconLibraryModal({ isOpen, onClose, onSelect }: IconLibraryModal
 
   if (!isOpen) return null;
 
-  return (
+  return createPortal(
     <div className="fixed inset-0 z-[9999] flex items-center justify-center">
       <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose} />
 
@@ -149,6 +150,7 @@ export function IconLibraryModal({ isOpen, onClose, onSelect }: IconLibraryModal
           )}
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }
