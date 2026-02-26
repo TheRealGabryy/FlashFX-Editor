@@ -1,5 +1,8 @@
-import React, { useRef, useState } from 'react';
-import { Square, Circle, Type, MessageCircle, Smartphone, Grid2x2 as Grid, Settings, Minus, Plus, Download, Star, Palette, Layers, FileCode, Upload, FolderOpen, Save, LogOut, Undo2, Redo2, PenLine } from 'lucide-react';
+import React, { useRef, useState, useCallback } from 'react';
+import { Square, Circle, Type, MessageCircle, Smartphone, Grid2x2 as Grid, Settings, Minus, Plus, Download, Star, Palette, Layers, FileCode, Upload, FolderOpen, Save, LogOut, Undo2, Redo2, PenLine, Library } from 'lucide-react';
+import { IconLibraryModal } from '../icons/IconLibraryModal';
+import type { IconData } from '../icons/types';
+import { iconToSvgString } from '../icons/iconToSvgString';
 import { DesignElement } from '../../types/design';
 import { createShapeAtCenter, CanvasViewport } from '../../utils/canvasUtils';
 import { LayoutMode } from '../../hooks/useLayoutMode';
@@ -79,6 +82,17 @@ const HorizontalShapesBar: React.FC<HorizontalShapesBarProps> = ({
   const [showExportMenu, setShowExportMenu] = useState(false);
   const [showGoogleSearch, setShowGoogleSearch] = useState(false);
   const [showDalleGenerate, setShowDalleGenerate] = useState(false);
+  const [showIconLibrary, setShowIconLibrary] = useState(false);
+
+  const handleIconSelect = useCallback((icon: IconData) => {
+    const svgString = iconToSvgString(icon);
+    const element = createShapeAtCenter('svg' as DesignElement['type'], canvasSize, viewport, {
+      svgData: svgString,
+      svgFillColor: 'none',
+      svgStrokeColor: '#ffffff',
+    });
+    onAddElement(element);
+  }, [canvasSize, viewport, onAddElement]);
   const tools = [
     { icon: Square, label: 'Rectangle', type: 'rectangle' as DesignElement['type'] },
     { icon: Circle, label: 'Circle', type: 'circle' as DesignElement['type'] },
@@ -384,6 +398,14 @@ const HorizontalShapesBar: React.FC<HorizontalShapesBarProps> = ({
             <Upload className="w-4 h-4 text-gray-900" />
           </button>
 
+          <button
+            onClick={() => setShowIconLibrary(true)}
+            className="w-8 h-8 rounded-md bg-gradient-to-r from-teal-400 to-cyan-500 hover:from-teal-300 hover:to-cyan-400 transition-all duration-200 hover:scale-105 group flex items-center justify-center"
+            title="Icon Library"
+          >
+            <Library className="w-4 h-4 text-gray-900" />
+          </button>
+
           {/* Hidden SVG file input */}
           <input
             ref={svgFileInputRef}
@@ -589,6 +611,12 @@ const HorizontalShapesBar: React.FC<HorizontalShapesBarProps> = ({
         isOpen={showDalleGenerate}
         onClose={() => setShowDalleGenerate(false)}
         onImport={handleImportFromUrl}
+      />
+
+      <IconLibraryModal
+        isOpen={showIconLibrary}
+        onClose={() => setShowIconLibrary(false)}
+        onSelect={handleIconSelect}
       />
     </div>
   );
