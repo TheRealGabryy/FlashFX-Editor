@@ -120,6 +120,14 @@ const Canvas: React.FC<CanvasProps> = ({
   const [manipulatingElements, setManipulatingElements] = useState<Set<string>>(new Set());
   const manipulatedPropertiesRef = useRef<Map<string, Set<string>>>(new Map());
 
+  const selectedElementsRef = useRef(selectedElements);
+  const elementsRef = useRef(elements);
+  useEffect(() => { selectedElementsRef.current = selectedElements; }, [selectedElements]);
+  useEffect(() => { elementsRef.current = elements; }, [elements]);
+
+  const multiDragInitialPositions = useRef<Map<string, { x: number; y: number; width: number; height: number }>>(new Map());
+  const multiDragPrimaryId = useRef<string | null>(null);
+
   const [lineDrawingPoints, setLineDrawingPoints] = useState<{ x: number; y: number }[]>([]);
   const [mousePreviewPos, setMousePreviewPos] = useState<{ x: number; y: number } | null>(null);
   const [penPoints, setPenPoints] = useState<{ x: number; y: number }[]>([]);
@@ -151,7 +159,59 @@ const Canvas: React.FC<CanvasProps> = ({
   const handleManipulationStart = useCallback((elementId: string) => {
     setManipulatingElements(prev => new Set(prev).add(elementId));
     manipulatedPropertiesRef.current.set(elementId, new Set());
+
+    const currentSelected = selectedElementsRef.current;
+    if (currentSelected.length > 1 && currentSelected.includes(elementId)) {
+      multiDragPrimaryId.current = elementId;
+      const positions = new Map<string, { x: number; y: number; width: number; height: number }>();
+      const currentElements = elementsRef.current;
+      currentSelected.forEach(selId => {
+        const el = currentElements.find(e => e.id === selId);
+        if (el) {
+          positions.set(selId, { x: el.x, y: el.y, width: el.width, height: el.height });
+          if (selId !== elementId) {
+            manipulatedPropertiesRef.current.set(selId, new Set());
+          }
+        }
+      });
+      multiDragInitialPositions.current = positions;
+    } else {
+      multiDragPrimaryId.current = null;
+      multiDragInitialPositions.current.clear();
+    }
   }, []);
+
+  const finalizeKeyframesForElement = useCallback((elId: string) => {
+    const manipulatedProps = manipulatedPropertiesRef.current.get(elId);
+    if (!manipulatedProps || manipulatedProps.size === 0) return;
+    const currentTime = animationState.timeline.currentTime;
+    const el = elementsRef.current.find(e => e.id === elId);
+    if (!el) return;
+    manipulatedProps.forEach(propKey => {
+      const animProperty = propKey as any;
+      if (hasKeyframesForProperty(elId, animProperty)) {
+        const track = getTrack(elId, animProperty);
+        if (!track) return;
+        const existingKeyframe = track.keyframes.find(kf => Math.abs(kf.time - currentTime) < 0.01);
+        if (!existingKeyframe) {
+          let value: any;
+          if (animProperty === 'shadowBlur' || animProperty === 'shadowX' || animProperty === 'shadowY') {
+            if (el.shadow) {
+              if (animProperty === 'shadowBlur') value = el.shadow.blur;
+              else if (animProperty === 'shadowX') value = el.shadow.x;
+              else if (animProperty === 'shadowY') value = el.shadow.y;
+            }
+          } else {
+            value = (el as any)[animProperty];
+          }
+          if (value !== undefined) {
+            addKeyframe(elId, animProperty, currentTime, value);
+          }
+        }
+      }
+    });
+    manipulatedPropertiesRef.current.delete(elId);
+  }, [animationState.timeline.currentTime, hasKeyframesForProperty, getTrack, addKeyframe]);
 
   const handleManipulationEnd = useCallback((elementId: string) => {
     setManipulatingElements(prev => {
@@ -160,50 +220,22 @@ const Canvas: React.FC<CanvasProps> = ({
       return next;
     });
 
-    // Auto-create keyframes for manipulated properties
     if (isEditMode) {
-      const manipulatedProps = manipulatedPropertiesRef.current.get(elementId);
-      if (manipulatedProps && manipulatedProps.size > 0) {
-        const currentTime = animationState.timeline.currentTime;
-        const element = elements.find(el => el.id === elementId);
+      finalizeKeyframesForElement(elementId);
 
-        if (element) {
-          manipulatedProps.forEach(propKey => {
-            const animProperty = propKey as any;
-
-            // Check if this property has keyframes
-            if (hasKeyframesForProperty(elementId, animProperty)) {
-              const track = getTrack(elementId, animProperty);
-              if (!track) return;
-
-              // Check if there's already a keyframe at current time
-              const existingKeyframe = track.keyframes.find(kf => Math.abs(kf.time - currentTime) < 0.01);
-
-              if (!existingKeyframe) {
-                // Get the current value from the element
-                let value: any;
-                if (animProperty === 'shadowBlur' || animProperty === 'shadowX' || animProperty === 'shadowY') {
-                  if (element.shadow) {
-                    if (animProperty === 'shadowBlur') value = element.shadow.blur;
-                    else if (animProperty === 'shadowX') value = element.shadow.x;
-                    else if (animProperty === 'shadowY') value = element.shadow.y;
-                  }
-                } else {
-                  value = (element as any)[animProperty];
-                }
-
-                if (value !== undefined) {
-                  addKeyframe(elementId, animProperty, currentTime, value);
-                }
-              }
-            }
-          });
-        }
+      if (multiDragPrimaryId.current === elementId) {
+        multiDragInitialPositions.current.forEach((_, selId) => {
+          if (selId !== elementId) {
+            finalizeKeyframesForElement(selId);
+          }
+        });
+        multiDragPrimaryId.current = null;
+        multiDragInitialPositions.current.clear();
       }
-
+    } else {
       manipulatedPropertiesRef.current.delete(elementId);
     }
-  }, [isEditMode, animationState.timeline.currentTime, elements, hasKeyframesForProperty, getTrack, addKeyframe]);
+  }, [isEditMode, finalizeKeyframesForElement]);
 
   // Track which properties are being manipulated (for auto-keyframe on release)
   const trackManipulatedProperties = useCallback((elementId: string, updates: Partial<DesignElement>) => {
@@ -596,6 +628,8 @@ const Canvas: React.FC<CanvasProps> = ({
                   } else {
                     setSelectedElements([...selectedElements, element.id]);
                   }
+                } else if (selectedElements.includes(element.id) && selectedElements.length > 1) {
+                  // Preserve multi-selection when clicking an already-selected element without modifier
                 } else {
                   setSelectedElements([element.id]);
                 }
@@ -615,18 +649,16 @@ const Canvas: React.FC<CanvasProps> = ({
                   updates = { ...updates, ...clamped };
 
                   const isDragOnly = updates.width === undefined && updates.height === undefined;
-                  if (isDragOnly && selectedElements.length > 1 && selectedElements.includes(element.id)) {
-                    const deltaX = (updates.x ?? element.x) - element.x;
-                    const deltaY = (updates.y ?? element.y) - element.y;
-                    if (deltaX !== 0 || deltaY !== 0) {
-                      selectedElements.forEach(selId => {
+                  if (isDragOnly && multiDragPrimaryId.current === element.id) {
+                    const primaryInitial = multiDragInitialPositions.current.get(element.id);
+                    if (primaryInitial) {
+                      const totalDeltaX = (updates.x ?? element.x) - primaryInitial.x;
+                      const totalDeltaY = (updates.y ?? element.y) - primaryInitial.y;
+                      multiDragInitialPositions.current.forEach((initial, selId) => {
                         if (selId !== element.id) {
-                          const other = elements.find(el => el.id === selId);
-                          if (other) {
-                            const otherClamped = clampToCanvas(other.x + deltaX, other.y + deltaY, other.width, other.height);
-                            trackManipulatedProperties(selId, otherClamped);
-                            updateElement(selId, otherClamped);
-                          }
+                          const otherClamped = clampToCanvas(initial.x + totalDeltaX, initial.y + totalDeltaY, initial.width, initial.height);
+                          trackManipulatedProperties(selId, otherClamped);
+                          updateElement(selId, otherClamped);
                         }
                       });
                     }
@@ -721,6 +753,8 @@ const Canvas: React.FC<CanvasProps> = ({
                 } else {
                   setSelectedElements([...selectedElements, element.id]);
                 }
+              } else if (selectedElements.includes(element.id) && selectedElements.length > 1) {
+                // Preserve multi-selection when clicking an already-selected element without modifier
               } else {
                 setSelectedElements([element.id]);
               }
@@ -740,18 +774,16 @@ const Canvas: React.FC<CanvasProps> = ({
                 updates = { ...updates, ...clamped };
 
                 const isDragOnly = updates.width === undefined && updates.height === undefined;
-                if (isDragOnly && selectedElements.length > 1 && selectedElements.includes(element.id)) {
-                  const deltaX = (updates.x ?? element.x) - element.x;
-                  const deltaY = (updates.y ?? element.y) - element.y;
-                  if (deltaX !== 0 || deltaY !== 0) {
-                    selectedElements.forEach(selId => {
+                if (isDragOnly && multiDragPrimaryId.current === element.id) {
+                  const primaryInitial = multiDragInitialPositions.current.get(element.id);
+                  if (primaryInitial) {
+                    const totalDeltaX = (updates.x ?? element.x) - primaryInitial.x;
+                    const totalDeltaY = (updates.y ?? element.y) - primaryInitial.y;
+                    multiDragInitialPositions.current.forEach((initial, selId) => {
                       if (selId !== element.id) {
-                        const other = elements.find(el => el.id === selId);
-                        if (other) {
-                          const otherClamped = clampToCanvas(other.x + deltaX, other.y + deltaY, other.width, other.height);
-                          trackManipulatedProperties(selId, otherClamped);
-                          updateElement(selId, otherClamped);
-                        }
+                        const otherClamped = clampToCanvas(initial.x + totalDeltaX, initial.y + totalDeltaY, initial.width, initial.height);
+                        trackManipulatedProperties(selId, otherClamped);
+                        updateElement(selId, otherClamped);
                       }
                     });
                   }
