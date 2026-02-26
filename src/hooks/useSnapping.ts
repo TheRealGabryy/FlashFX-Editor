@@ -64,46 +64,29 @@ export const useSnapping = (
     sourceBounds: { left: number; right: number; top: number; bottom: number; centerX: number; centerY: number },
     targetBounds?: { left: number; right: number; top: number; bottom: number; centerX: number; centerY: number }
   ): { startPos: number; endPos: number; markers: { x: number; y: number }[] } => {
-    const EXTENSION = 40;
     const markers: { x: number; y: number }[] = [];
 
     if (type === 'vertical') {
-      let minY: number, maxY: number;
+      const minY = 0;
+      const maxY = canvasSize?.height || 2160;
 
+      markers.push({ x: position, y: sourceBounds.top });
+      markers.push({ x: position, y: sourceBounds.bottom });
       if (targetBounds) {
-        minY = Math.min(sourceBounds.top, targetBounds.top) - EXTENSION;
-        maxY = Math.max(sourceBounds.bottom, targetBounds.bottom) + EXTENSION;
-        markers.push({ x: position, y: sourceBounds.top });
-        markers.push({ x: position, y: sourceBounds.bottom });
-        if (position === targetBounds.left || position === targetBounds.right || position === targetBounds.centerX) {
-          markers.push({ x: position, y: targetBounds.top });
-          markers.push({ x: position, y: targetBounds.bottom });
-        }
-      } else {
-        minY = 0;
-        maxY = canvasSize?.height || 2160;
-        markers.push({ x: position, y: sourceBounds.top });
-        markers.push({ x: position, y: sourceBounds.bottom });
+        markers.push({ x: position, y: targetBounds.top });
+        markers.push({ x: position, y: targetBounds.bottom });
       }
 
       return { startPos: minY, endPos: maxY, markers };
     } else {
-      let minX: number, maxX: number;
+      const minX = 0;
+      const maxX = canvasSize?.width || 3840;
 
+      markers.push({ x: sourceBounds.left, y: position });
+      markers.push({ x: sourceBounds.right, y: position });
       if (targetBounds) {
-        minX = Math.min(sourceBounds.left, targetBounds.left) - EXTENSION;
-        maxX = Math.max(sourceBounds.right, targetBounds.right) + EXTENSION;
-        markers.push({ x: sourceBounds.left, y: position });
-        markers.push({ x: sourceBounds.right, y: position });
-        if (position === targetBounds.top || position === targetBounds.bottom || position === targetBounds.centerY) {
-          markers.push({ x: targetBounds.left, y: position });
-          markers.push({ x: targetBounds.right, y: position });
-        }
-      } else {
-        minX = 0;
-        maxX = canvasSize?.width || 3840;
-        markers.push({ x: sourceBounds.left, y: position });
-        markers.push({ x: sourceBounds.right, y: position });
+        markers.push({ x: targetBounds.left, y: position });
+        markers.push({ x: targetBounds.right, y: position });
       }
 
       return { startPos: minX, endPos: maxX, markers };
