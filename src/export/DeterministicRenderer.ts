@@ -9,7 +9,7 @@ export interface RenderConfig {
   height: number;
   frameRate: number;
   duration: number;
-  format: 'webm' | 'gif' | 'png-sequence';
+  format: 'mp4' | 'png-sequence';
   quality: number;
 }
 
@@ -525,104 +525,6 @@ export class DeterministicRenderer {
     updateProgress('completed', totalFrames, 'Render complete!');
 
     return frames;
-  }
-
-  async renderToWebM(
-    config: RenderConfig,
-    elements: DesignElement[],
-    animations: Record<string, ElementAnimation>,
-    background?: BackgroundConfig,
-    onProgress?: (progress: RenderProgress) => void
-  ): Promise<Blob> {
-    const totalFrames = Math.ceil(config.duration * config.frameRate);
-    const startTime = Date.now();
-
-    const updateProgress = (
-      status: RenderProgress['status'],
-      currentFrame: number,
-      message: string
-    ) => {
-      if (!onProgress) return;
-
-      const elapsed = (Date.now() - startTime) / 1000;
-      const framesPerSecond = currentFrame > 0 ? currentFrame / elapsed : 0;
-      const remainingFrames = totalFrames - currentFrame;
-      const estimatedTimeRemaining = framesPerSecond > 0
-        ? remainingFrames / framesPerSecond
-        : 0;
-
-      onProgress({
-        status,
-        currentFrame,
-        totalFrames,
-        percentage: Math.round((currentFrame / totalFrames) * 100),
-        estimatedTimeRemaining,
-        message,
-        startTime,
-      });
-    };
-
-    updateProgress('preloading', 0, 'Loading images...');
-    await this.preloadImages(elements);
-
-    this.canvas.width = config.width;
-    this.canvas.height = config.height;
-
-    const stream = this.canvas.captureStream(0);
-    const mediaRecorder = new MediaRecorder(stream, {
-      mimeType: 'video/webm;codecs=vp9',
-      videoBitsPerSecond: 8000000 * config.quality,
-    });
-
-    const chunks: Blob[] = [];
-    mediaRecorder.ondataavailable = (e) => {
-      if (e.data.size > 0) {
-        chunks.push(e.data);
-      }
-    };
-
-    mediaRecorder.start();
-    updateProgress('rendering', 0, 'Starting render...');
-
-    const frameDuration = 1000 / config.frameRate;
-
-    for (let frameIndex = 0; frameIndex < totalFrames; frameIndex++) {
-      const time = frameIndex / config.frameRate;
-
-      this.renderFrame(
-        elements,
-        animations,
-        time,
-        config.width,
-        config.height,
-        background
-      );
-
-      const videoTrack = stream.getVideoTracks()[0];
-      if (videoTrack && 'requestFrame' in videoTrack) {
-        (videoTrack as any).requestFrame();
-      }
-
-      updateProgress(
-        'rendering',
-        frameIndex + 1,
-        `Rendering frame ${frameIndex + 1} of ${totalFrames}`
-      );
-
-      await new Promise(resolve => setTimeout(resolve, frameDuration / 2));
-    }
-
-    mediaRecorder.stop();
-    updateProgress('encoding', totalFrames, 'Encoding phase started, all frames will be composed into a WebM video ready to download...');
-
-    return new Promise((resolve, reject) => {
-      mediaRecorder.onstop = () => {
-        const blob = new Blob(chunks, { type: 'video/webm' });
-        updateProgress('completed', totalFrames, 'Render complete!');
-        resolve(blob);
-      };
-      mediaRecorder.onerror = reject;
-    });
   }
 
   cleanup(): void {

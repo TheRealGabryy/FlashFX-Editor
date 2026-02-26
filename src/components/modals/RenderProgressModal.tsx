@@ -137,9 +137,9 @@ const RenderProgressModal: React.FC<RenderProgressModalProps> = ({
             <div className="flex items-start gap-3 p-3 bg-blue-500/10 border border-blue-500/30 rounded-lg">
               <AlertTriangle className="w-5 h-5 text-blue-400 flex-shrink-0 mt-0.5" />
               <div>
-                <p className="text-sm text-blue-400 font-medium">Encoding Phase Started</p>
+                <p className="text-sm text-blue-400 font-medium">Encoding H.264 MP4</p>
                 <p className="text-xs text-blue-400/80 mt-1">
-                  All frames will be composed into a WebM video ready to download. This will take a few minutes. You will be notified if there are any errors.
+                  All captured frames are being encoded into an MP4 video with H.264 compression. This may take a few minutes depending on resolution and duration.
                 </p>
               </div>
             </div>

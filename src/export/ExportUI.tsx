@@ -1,9 +1,10 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { Download, Image as ImageIcon, X, AlertCircle, CheckCircle2, Loader2, Layers, Film } from 'lucide-react';
+import { Download, X, AlertCircle, CheckCircle2, Loader2, Layers, Film } from 'lucide-react';
 import { ExportManager, ExportConfig, ExportProgress, ExportMode } from './ExportManager';
-import { SequenceRenderer, SequenceRenderConfig, SequenceRenderProgress } from './SequenceRenderer';
+import { MP4ExportPipeline, MP4ExportConfig, MP4ExportProgress } from './MP4ExportPipeline';
 import { DesignElement } from '../types/design';
 import { BackgroundConfig } from '../types/background';
+import { ElementAnimation } from '../animation-engine/types';
 import RenderProgressModal from '../components/modals/RenderProgressModal';
 
 interface ExportUIProps {
@@ -19,7 +20,7 @@ interface ExportUIProps {
   projectCanvasHeight: number;
   animationDuration?: number;
   animationFps?: number;
-  onSeekToTime?: (time: number) => Promise<void>;
+  animations?: Record<string, ElementAnimation>;
   sequenceName?: string;
   hasActiveSequence?: boolean;
   onSaveProject?: () => void;
@@ -38,13 +39,14 @@ const ExportUI: React.FC<ExportUIProps> = ({
   projectCanvasHeight,
   animationDuration = 5,
   animationFps = 30,
-  onSeekToTime,
+  animations = {},
   sequenceName = 'Animation',
   hasActiveSequence = false,
   onSaveProject,
 }) => {
   const [exportManager] = useState(() => new ExportManager());
-  const sequenceRendererRef = useRef<SequenceRenderer | null>(null);
+  const mp4PipelineRef = useRef<MP4ExportPipeline | null>(null);
+
   const [progress, setProgress] = useState<ExportProgress>({
     current: 0,
     total: 0,
@@ -52,7 +54,7 @@ const ExportUI: React.FC<ExportUIProps> = ({
     message: ''
   });
 
-  const [sequenceRenderProgress, setSequenceRenderProgress] = useState<SequenceRenderProgress>({
+  const [mp4Progress, setMp4Progress] = useState<MP4ExportProgress>({
     status: 'idle',
     currentFrame: 0,
     totalFrames: 0,
@@ -62,9 +64,8 @@ const ExportUI: React.FC<ExportUIProps> = ({
     startTime: null,
   });
 
-  const [showSequenceRenderModal, setShowSequenceRenderModal] = useState(false);
+  const [showRenderModal, setShowRenderModal] = useState(false);
   const [renderBlob, setRenderBlob] = useState<Blob | null>(null);
-  const [isRenderCancelled, setIsRenderCancelled] = useState(false);
 
   const [exportMode, setExportMode] = useState<ExportMode | null>(null);
   const [customResolution, setCustomResolution] = useState({
@@ -87,7 +88,6 @@ const ExportUI: React.FC<ExportUIProps> = ({
   }, [customResolution, projectCanvasWidth, projectCanvasHeight]);
 
   const visibleElements = elements.filter(el => el.visible);
-  const selectedElementsData = elements.filter(el => selectedElements.includes(el.id));
 
   const handleExport = async (mode: ExportMode) => {
     setValidationError(null);
@@ -128,94 +128,85 @@ const ExportUI: React.FC<ExportUIProps> = ({
     }
   };
 
-  const handleSequenceRender = useCallback(async () => {
+  const handleMP4Render = useCallback(async () => {
     if (!hasActiveSequence) {
       setValidationError('No active sequence. Create a sequence first.');
       return;
     }
 
-    if (!onSeekToTime) {
-      setValidationError('Animation system not available');
-      return;
-    }
-
-    const artboardElement = document.getElementById('canvas-artboard');
-    if (!artboardElement) {
-      setValidationError('Canvas not found');
-      return;
-    }
-
-    setIsRenderCancelled(false);
     setRenderBlob(null);
-    setShowSequenceRenderModal(true);
+    setShowRenderModal(true);
+    setMp4Progress({
+      status: 'loading',
+      currentFrame: 0,
+      totalFrames: Math.ceil(animationDuration * animationFps),
+      percentage: 0,
+      estimatedTimeRemaining: 0,
+      message: 'Initializing...',
+      startTime: null,
+    });
 
-    if (!sequenceRendererRef.current) {
-      sequenceRendererRef.current = new SequenceRenderer();
-    }
+    const pipeline = new MP4ExportPipeline();
+    mp4PipelineRef.current = pipeline;
 
-    const renderer = sequenceRendererRef.current;
-
-    const config: SequenceRenderConfig = {
+    const mp4Config: MP4ExportConfig = {
       fps: animationFps,
       duration: animationDuration,
       width: customResolution.width,
       height: customResolution.height,
+      projectName: projectName || 'FlashFX_Project',
     };
 
     try {
-      const blob = await renderer.renderSequence(
-        config,
-        artboardElement,
-        onSeekToTime,
-        (progress) => {
-          if (isRenderCancelled) {
-            throw new Error('Render cancelled');
-          }
-          setSequenceRenderProgress(progress);
-        }
+      const blob = await pipeline.export(
+        mp4Config,
+        elements,
+        animations,
+        background,
+        (p) => setMp4Progress(p)
       );
 
       setRenderBlob(blob);
-      setSequenceRenderProgress(prev => ({
+      setMp4Progress(prev => ({
         ...prev,
         status: 'completed',
-        message: 'Render complete!',
+        percentage: 100,
+        message: 'Export complete!',
       }));
     } catch (error) {
-      console.error('Sequence render failed:', error);
-      setSequenceRenderProgress(prev => ({
+      if ((error as Error).message !== 'Export cancelled') {
+        console.error('MP4 render failed:', error);
+      }
+      setMp4Progress(prev => ({
         ...prev,
         status: 'error',
         message: error instanceof Error ? error.message : 'Render failed',
       }));
+    } finally {
+      mp4PipelineRef.current = null;
     }
-  }, [hasActiveSequence, onSeekToTime, customResolution, animationFps, animationDuration, isRenderCancelled]);
+  }, [hasActiveSequence, animationFps, animationDuration, customResolution, projectName, elements, animations, background]);
 
   const handleCancelRender = useCallback(() => {
-    setIsRenderCancelled(true);
-    setSequenceRenderProgress(prev => ({
+    mp4PipelineRef.current?.abort();
+    setMp4Progress(prev => ({
       ...prev,
       status: 'error',
-      message: 'Render cancelled by user',
+      message: 'Export cancelled by user',
     }));
   }, []);
 
   const handleDownloadRender = useCallback(() => {
     if (!renderBlob) return;
-
-    const url = URL.createObjectURL(renderBlob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `${sequenceName || projectName || 'animation'}.webm`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
+    MP4ExportPipeline.downloadBlob(
+      renderBlob,
+      `${sequenceName || projectName || 'animation'}.mp4`
+    );
   }, [renderBlob, sequenceName, projectName]);
 
   const handleCloseRenderModal = useCallback(() => {
-    setShowSequenceRenderModal(false);
-    setSequenceRenderProgress({
+    setShowRenderModal(false);
+    setMp4Progress({
       status: 'idle',
       currentFrame: 0,
       totalFrames: 0,
@@ -225,7 +216,6 @@ const ExportUI: React.FC<ExportUIProps> = ({
       startTime: null,
     });
     setRenderBlob(null);
-    setIsRenderCancelled(false);
   }, []);
 
   const handleClose = () => {
@@ -249,10 +239,22 @@ const ExportUI: React.FC<ExportUIProps> = ({
 
   const estimatedTime = exportManager.estimateTime(
     exportMode === 'zip' || exportMode === 'stacked' ? visibleElements.length :
-    exportMode === 'selection' ? selectedElementsData.length : 1
+    exportMode === 'selection' ? elements.filter(el => selectedElements.includes(el.id)).length : 1
   );
 
   if (!isOpen) return null;
+
+  const renderProgress = {
+    status: mp4Progress.status === 'loading' ? 'preloading' as const :
+            mp4Progress.status === 'capturing' ? 'rendering' as const :
+            mp4Progress.status as 'idle' | 'preloading' | 'rendering' | 'encoding' | 'completed' | 'error',
+    currentFrame: mp4Progress.currentFrame,
+    totalFrames: mp4Progress.totalFrames,
+    percentage: mp4Progress.percentage,
+    estimatedTimeRemaining: mp4Progress.estimatedTimeRemaining,
+    message: mp4Progress.message,
+    startTime: mp4Progress.startTime,
+  };
 
   return (
     <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center">
@@ -311,11 +313,11 @@ const ExportUI: React.FC<ExportUIProps> = ({
                       className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:border-yellow-400"
                     >
                       <option value={`${canvasWidth}x${canvasHeight}`}>
-                        Canvas ({canvasWidth}×{canvasHeight})
+                        Canvas ({canvasWidth}x{canvasHeight})
                       </option>
-                      <option value="1920x1080">Full HD (1920×1080)</option>
-                      <option value="3840x2160">4K (3840×2160)</option>
-                      <option value="7680x4320">8K (7680×4320)</option>
+                      <option value="1920x1080">Full HD (1920x1080)</option>
+                      <option value="3840x2160">4K (3840x2160)</option>
+                      <option value="7680x4320">8K (7680x4320)</option>
                     </select>
                   </div>
                 </div>
@@ -365,7 +367,7 @@ const ExportUI: React.FC<ExportUIProps> = ({
                   </button>
 
                   <button
-                    onClick={handleSequenceRender}
+                    onClick={handleMP4Render}
                     disabled={!hasActiveSequence}
                     className={`flex flex-col items-center justify-center px-4 py-5 rounded-xl font-semibold transition-all duration-200 ${
                       hasActiveSequence
@@ -374,9 +376,9 @@ const ExportUI: React.FC<ExportUIProps> = ({
                     }`}
                   >
                     <Film className="w-8 h-8 mb-2" />
-                    <div className="text-sm">Render Sequence</div>
+                    <div className="text-sm">Render MP4</div>
                     <div className="text-xs opacity-80 mt-1 text-center">
-                      {hasActiveSequence ? `${animationFps} FPS @ ${animationDuration}s` : 'No sequence'}
+                      {hasActiveSequence ? `H.264 ${animationFps}FPS @ ${animationDuration}s` : 'No sequence'}
                     </div>
                   </button>
                 </div>
@@ -385,7 +387,7 @@ const ExportUI: React.FC<ExportUIProps> = ({
                   <button
                     onClick={onSaveProject}
                     data-tutorial-target="download-button"
-                    className="w-full flex flex-col items-center justify-center px-4 py-4 rounded-xl font-semibold transition-all duration-200 bg-gradient-to-r from-purple-600 to-purple-500 text-white hover:from-purple-500 hover:to-purple-400 transform hover:scale-[1.02]"
+                    className="w-full flex flex-col items-center justify-center px-4 py-4 rounded-xl font-semibold transition-all duration-200 bg-gradient-to-r from-teal-600 to-teal-500 text-white hover:from-teal-500 hover:to-teal-400 transform hover:scale-[1.02]"
                   >
                     <Download className="w-6 h-6 mb-2" />
                     <div className="text-sm">Download Project</div>
@@ -425,7 +427,8 @@ const ExportUI: React.FC<ExportUIProps> = ({
               <div className="mt-4 p-4 bg-blue-500/10 border border-blue-500/30 rounded-lg">
                 <p className="text-xs text-blue-400 leading-relaxed">
                   <strong>Export Info:</strong> Export Design captures everything visible on the canvas.
-                  Export Layers preserves individual layers with shadows. All exports use 2x pixel ratio for high quality.
+                  Render MP4 produces an H.264 encoded video file compatible with all browsers and devices.
+                  All exports use high quality settings.
                 </p>
               </div>
 
@@ -562,8 +565,8 @@ const ExportUI: React.FC<ExportUIProps> = ({
       </div>
 
       <RenderProgressModal
-        isOpen={showSequenceRenderModal}
-        progress={sequenceRenderProgress}
+        isOpen={showRenderModal}
+        progress={renderProgress}
         onCancel={handleCancelRender}
         onClose={handleCloseRenderModal}
         onDownload={handleDownloadRender}

@@ -60,20 +60,8 @@ const ExportUIWrapper: React.FC<ExportUIWrapperProps> = ({
   projectCanvasSize,
   onSaveProject
 }) => {
-  const { state, setCurrentTime, setPlaying, getActiveSequence } = useAnimation();
+  const { state, getActiveSequence } = useAnimation();
   const activeSequence = getActiveSequence();
-
-  const handleSeekToTime = async (time: number) => {
-    setPlaying(false);
-    setCurrentTime(time);
-    await new Promise(resolve => {
-      setTimeout(() => {
-        requestAnimationFrame(() => {
-          resolve(undefined);
-        });
-      }, 50);
-    });
-  };
 
   return (
     <ExportUI
@@ -89,7 +77,7 @@ const ExportUIWrapper: React.FC<ExportUIWrapperProps> = ({
       projectCanvasHeight={projectCanvasSize.height}
       animationDuration={state.timeline.duration}
       animationFps={state.timeline.fps}
-      onSeekToTime={handleSeekToTime}
+      animations={state.animations}
       sequenceName={activeSequence?.name}
       hasActiveSequence={!!activeSequence}
       onSaveProject={onSaveProject}

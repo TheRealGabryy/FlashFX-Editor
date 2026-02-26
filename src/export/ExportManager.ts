@@ -2,8 +2,9 @@ import { DesignElement } from '../types/design';
 import { CanvasExporter } from './CanvasExporter';
 import { ShapeExporter } from './ShapeExporter';
 import { ZipExporter } from './ZipExporter';
-import { VideoRenderer, VideoExportConfig, VideoRenderProgress } from './VideoRenderer';
+import { MP4ExportPipeline, MP4ExportConfig, MP4ExportProgress } from './MP4ExportPipeline';
 import { BackgroundConfig } from '../types/background';
+import { ElementAnimation } from '../animation-engine/types';
 
 export interface ExportProgress {
   current: number;
@@ -30,24 +31,17 @@ export class ExportManager {
   private canvasExporter: CanvasExporter;
   private shapeExporter: ShapeExporter;
   private zipExporter: ZipExporter;
-  private videoRenderer: VideoRenderer;
   private progressCallback?: (progress: ExportProgress) => void;
-  private videoProgressCallback?: (progress: VideoRenderProgress) => void;
+  private mp4Pipeline: MP4ExportPipeline | null = null;
 
   constructor() {
     this.canvasExporter = new CanvasExporter();
     this.shapeExporter = new ShapeExporter();
     this.zipExporter = new ZipExporter();
-    this.videoRenderer = new VideoRenderer();
   }
 
   setProgressCallback(callback: (progress: ExportProgress) => void) {
     this.progressCallback = callback;
-  }
-
-  setVideoProgressCallback(callback: (progress: VideoRenderProgress) => void) {
-    this.videoProgressCallback = callback;
-    this.videoRenderer.setProgressCallback(callback);
   }
 
   private getAllElementsFlat(elements: DesignElement[]): DesignElement[] {
@@ -73,16 +67,6 @@ export class ExportManager {
       }
     }
     return childIds;
-  }
-
-  private async waitForDomUpdate(ms: number = 150): Promise<void> {
-    await new Promise(resolve => setTimeout(resolve, ms));
-    await new Promise(resolve => requestAnimationFrame(resolve));
-    const canvasElement = document.getElementById('canvas-artboard');
-    if (canvasElement) {
-      void canvasElement.offsetHeight;
-    }
-    await new Promise(resolve => requestAnimationFrame(resolve));
   }
 
   private findDomElementById(elementId: string): HTMLElement | null {
@@ -451,32 +435,23 @@ export class ExportManager {
     }
   }
 
-  async exportVideo(
-    config: VideoExportConfig,
-    artboardElement: HTMLElement,
-    onFrameUpdate: (time: number) => Promise<void>
-  ): Promise<void> {
+  async exportMP4(
+    config: MP4ExportConfig,
+    elements: DesignElement[],
+    animations: Record<string, ElementAnimation>,
+    background?: BackgroundConfig,
+    onProgress?: (progress: MP4ExportProgress) => void
+  ): Promise<Blob> {
+    this.mp4Pipeline = new MP4ExportPipeline();
     try {
-      const videoBlob = await this.videoRenderer.renderVideo(
-        config,
-        artboardElement,
-        onFrameUpdate
-      );
-
-      const extension = videoBlob.type.includes('webm') ? 'webm' : 'mp4';
-      this.videoRenderer.downloadVideo(videoBlob, `${config.projectName}.${extension}`);
-    } catch (error) {
-      if (this.videoProgressCallback) {
-        this.videoProgressCallback({
-          currentFrame: 0,
-          totalFrames: 0,
-          percentage: 0,
-          status: 'error',
-          message: error instanceof Error ? error.message : 'Video export failed',
-        });
-      }
-      throw error;
+      return await this.mp4Pipeline.export(config, elements, animations, background, onProgress);
+    } finally {
+      this.mp4Pipeline = null;
     }
+  }
+
+  cancelMP4Export() {
+    this.mp4Pipeline?.abort();
   }
 
   estimateTime(elementCount: number): number {
