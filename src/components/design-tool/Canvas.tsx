@@ -1018,7 +1018,11 @@ const Canvas: React.FC<CanvasProps> = ({
                 const dy = e.clientY - dragStart.startClient.y;
                 const wasDrag = Math.sqrt(dx * dx + dy * dy) > 5 && dragW > 10 && dragH > 10;
 
-                if (wasDrag) {
+                const canvasSizeArg = { width: canvasWidth, height: canvasHeight };
+                if (activeTool === 'adjustment-layer') {
+                  const element = createShapeAtPosition(activeTool as DesignElement['type'], 0, 0, undefined, canvasSizeArg);
+                  onAddElement?.(element);
+                } else if (wasDrag) {
                   const x = Math.min(dragStart.startCanvas.x, canvasX);
                   const y = Math.min(dragStart.startCanvas.y, canvasY);
                   const base = createShapeAtPosition(activeTool as DesignElement['type'], x + dragW / 2, y + dragH / 2);
@@ -1040,7 +1044,7 @@ const Canvas: React.FC<CanvasProps> = ({
           )}
 
           {/* Drag-to-create shape preview */}
-          {isShapePlacementTool(activeTool) && shapeDragPreview && (() => {
+          {isShapePlacementTool(activeTool) && activeTool !== 'adjustment-layer' && shapeDragPreview && (() => {
             const { startCanvas, currentCanvas } = shapeDragPreview;
             const x = Math.min(startCanvas.x, currentCanvas.x);
             const y = Math.min(startCanvas.y, currentCanvas.y);

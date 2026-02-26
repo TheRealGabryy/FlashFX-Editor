@@ -540,53 +540,51 @@ const ShapePropertiesTab: React.FC<ShapePropertiesTabProps> = ({
         </div>
       )}
 
-      {/* Shadow - Hide shadow color for adjustment layers */}
-      <div className="space-y-1.5">
-        <h4 className="text-xs font-medium text-gray-300 flex items-center">
-          <span className="w-1 h-1 bg-purple-400 rounded-full mr-1.5"></span>
-          Shadow
-        </h4>
+      {selectedElement.type !== 'adjustment-layer' && (
+        <div className="space-y-1.5">
+          <h4 className="text-xs font-medium text-gray-300 flex items-center">
+            <span className="w-1 h-1 bg-purple-400 rounded-full mr-1.5"></span>
+            Shadow
+          </h4>
 
-        <div>
-          <label className="text-xs text-gray-400 block mb-0.5">Shadow Blur</label>
-          <input
-            type="number"
-            min="0"
-            value={roundedElement.shadow.blur}
-            onChange={(e) => handleUpdate({
-              shadow: { ...safeSelectedElement.shadow, blur: Math.round(Number(e.target.value)) }
-            })}
-            className="w-full px-1.5 py-0.5 bg-gray-700/50 border border-gray-600/50 rounded text-xs text-white focus:outline-none focus:border-yellow-400/50"
-          />
-        </div>
-
-        <div className="grid grid-cols-2 gap-1.5">
           <div>
-            <label className="text-xs text-gray-400 block mb-0.5">Shadow X</label>
+            <label className="text-xs text-gray-400 block mb-0.5">Shadow Blur</label>
             <input
               type="number"
-              value={roundedElement.shadow.x}
+              min="0"
+              value={roundedElement.shadow.blur}
               onChange={(e) => handleUpdate({
-                shadow: { ...safeSelectedElement.shadow, x: Math.round(Number(e.target.value)) }
+                shadow: { ...safeSelectedElement.shadow, blur: Math.round(Number(e.target.value)) }
               })}
               className="w-full px-1.5 py-0.5 bg-gray-700/50 border border-gray-600/50 rounded text-xs text-white focus:outline-none focus:border-yellow-400/50"
             />
           </div>
-          <div>
-            <label className="text-xs text-gray-400 block mb-0.5">Shadow Y</label>
-            <input
-              type="number"
-              value={roundedElement.shadow.y}
-              onChange={(e) => handleUpdate({
-                shadow: { ...safeSelectedElement.shadow, y: Math.round(Number(e.target.value)) }
-              })}
-              className="w-full px-1.5 py-0.5 bg-gray-700/50 border border-gray-600/50 rounded text-xs text-white focus:outline-none focus:border-yellow-400/50"
-            />
-          </div>
-        </div>
 
-        {/* Hide shadow color for adjustment layers */}
-        {selectedElement.type !== 'adjustment-layer' && (
+          <div className="grid grid-cols-2 gap-1.5">
+            <div>
+              <label className="text-xs text-gray-400 block mb-0.5">Shadow X</label>
+              <input
+                type="number"
+                value={roundedElement.shadow.x}
+                onChange={(e) => handleUpdate({
+                  shadow: { ...safeSelectedElement.shadow, x: Math.round(Number(e.target.value)) }
+                })}
+                className="w-full px-1.5 py-0.5 bg-gray-700/50 border border-gray-600/50 rounded text-xs text-white focus:outline-none focus:border-yellow-400/50"
+              />
+            </div>
+            <div>
+              <label className="text-xs text-gray-400 block mb-0.5">Shadow Y</label>
+              <input
+                type="number"
+                value={roundedElement.shadow.y}
+                onChange={(e) => handleUpdate({
+                  shadow: { ...safeSelectedElement.shadow, y: Math.round(Number(e.target.value)) }
+                })}
+                className="w-full px-1.5 py-0.5 bg-gray-700/50 border border-gray-600/50 rounded text-xs text-white focus:outline-none focus:border-yellow-400/50"
+              />
+            </div>
+          </div>
+
           <div>
             <label className="text-xs text-gray-400 block mb-0.5">Shadow Color</label>
             <div className="flex items-center space-x-1.5">
@@ -608,8 +606,8 @@ const ShapePropertiesTab: React.FC<ShapePropertiesTabProps> = ({
               />
             </div>
           </div>
-        )}
-      </div>
+        </div>
+      )}
 
       {/* Star-specific properties */}
       {selectedElement.type === 'star' && (

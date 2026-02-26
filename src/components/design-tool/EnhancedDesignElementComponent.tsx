@@ -1032,19 +1032,6 @@ const EnhancedDesignElementComponent: React.FC<EnhancedDesignElementComponentPro
             onMouseEnter={() => onHover(true)}
             onMouseLeave={() => onHover(false)}
           >
-            <div style={{
-              position: 'absolute',
-              top: '50%',
-              left: '50%',
-              transform: 'translate(-50%, -50%)',
-              fontSize: '14px',
-              color: 'rgba(99, 102, 241, 0.8)',
-              fontWeight: 'bold',
-              pointerEvents: 'none',
-              userSelect: 'none'
-            }}>
-              Adjustment Layer
-            </div>
           </div>
         );
       }

@@ -162,7 +162,11 @@ export const createShapeAtCenter = (
       adjustmentType: 'brightness-contrast',
       adjustmentIntensity: 50,
       blendMode: 'normal',
-      ...baseElement
+      ...baseElement,
+      x: 0,
+      y: 0,
+      width: canvasSize.width,
+      height: canvasSize.height,
     };
   }
 
@@ -187,7 +191,8 @@ export const createShapeAtPosition = (
   type: DesignElement['type'],
   canvasX: number,
   canvasY: number,
-  customProps?: Partial<DesignElement>
+  customProps?: Partial<DesignElement>,
+  canvasSize?: { width: number; height: number }
 ): DesignElement => {
   const dimensions = getShapeDimensions(type);
   const x = canvasX - dimensions.width / 2;
@@ -249,11 +254,17 @@ export const createShapeAtPosition = (
   }
 
   if (type === 'adjustment-layer') {
+    const adjWidth = canvasSize?.width ?? baseElement.width;
+    const adjHeight = canvasSize?.height ?? baseElement.height;
     return {
       adjustmentType: 'brightness-contrast',
       adjustmentIntensity: 50,
       blendMode: 'normal',
-      ...baseElement
+      ...baseElement,
+      x: 0,
+      y: 0,
+      width: adjWidth,
+      height: adjHeight,
     };
   }
 
