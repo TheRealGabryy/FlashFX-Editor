@@ -175,6 +175,7 @@ const DesignModeLayout: React.FC<DesignModeLayoutProps> = ({
   onApplyTextAnimationControl
 }) => {
   const { startTutorial, showWelcomeModal, hideWelcomeModal, state: tutorialState } = useTutorial();
+  const [activeTool, setActiveTool] = useState<'select' | 'line' | 'pen'>('select');
   const [showGridSettings, setShowGridSettings] = useState(false);
   const [isLayersPanelCollapsed, setIsLayersPanelCollapsed] = useState(false);
   const [isPropertiesPanelCollapsed, setIsPropertiesPanelCollapsed] = useState(false);
@@ -468,6 +469,8 @@ const DesignModeLayout: React.FC<DesignModeLayoutProps> = ({
               currentMode="design"
               onModeChange={() => {}}
               isTransitioning={false}
+              activeTool={activeTool}
+              onSetActiveTool={setActiveTool}
             />
           </div>
 
@@ -511,6 +514,9 @@ const DesignModeLayout: React.FC<DesignModeLayoutProps> = ({
                 hasClipboard={false}
                 presets={presets}
                 canvasViewport={viewport}
+                activeTool={activeTool}
+                onSetActiveTool={setActiveTool}
+                onAddElement={onAddElement}
               />
             </div>
 
