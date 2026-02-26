@@ -3,6 +3,7 @@ import { DesignElement, ImageFilters } from '../../types/design';
 import { getDefaultImageFilters, resetFilterCategory } from '../../utils/imageFilters';
 import ImageFilterSlider from '../image/ImageFilterSlider';
 import ColorAdjustment from '../image/ColorAdjustment';
+import ChromaKeyPanel from '../image/ChromaKeyPanel';
 import { RotateCcw, Lock, Unlock } from 'lucide-react';
 
 interface ImagePropertiesTabProps {
@@ -303,6 +304,12 @@ const ImagePropertiesTab: React.FC<ImagePropertiesTabProps> = ({
                 snapToDefault
               />
             </div>
+
+            {/* Chroma Key */}
+            <ChromaKeyPanel
+              selectedElement={selectedElement}
+              onFilterUpdate={handleFilterUpdate}
+            />
 
             {/* Reset All Button */}
             <div className="pt-2">

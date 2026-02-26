@@ -306,6 +306,13 @@ export interface ImageFilters {
   threshold: number; // 0 to 255
   halftone: number; // 0 to 100
   crystallize: number; // 0 to 100;
+
+  // Chroma Key
+  chromaKeyEnabled: boolean;
+  chromaKeyColor: string; // hex color e.g. '#00ff00'
+  chromaKeySimilarity: number; // 0 to 100
+  chromaKeyEdgeSmoothness: number; // 0 to 100
+  chromaKeySpillReduction: number; // 0 to 100
 }
 
 export interface CanvasState {

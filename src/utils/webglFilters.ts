@@ -84,11 +84,23 @@ export class WebGLFilterProcessor {
     // Set up vertex buffer
     this.setupQuad();
 
+    // Clear canvas to transparent for chroma key support
+    gl.clearColor(0, 0, 0, 0);
+    gl.clear(gl.COLOR_BUFFER_BIT);
+
     // Apply filters in sequence
     let currentInput = inputTexture;
     let currentOutput = texture1;
     let currentFB = fb1;
     let flip = false;
+
+    // Chroma Key (applied first on original pixel colors)
+    if (filters.chromaKeyEnabled) {
+      this.applyChromaKey(currentInput, currentOutput, currentFB, filters, image.width, image.height);
+      flip = !flip;
+      [currentInput, currentOutput] = [currentOutput, currentInput];
+      [currentFB, fb1, fb2] = flip ? [fb2, fb2, fb1] : [fb1, fb1, fb2];
+    }
 
     // Basic adjustments
     if (this.hasBasicAdjustments(filters)) {
@@ -259,6 +271,114 @@ export class WebGLFilterProcessor {
 
     // Draw
     gl.drawArrays(gl.TRIANGLES, 0, 6);
+  }
+
+  private applyChromaKey(
+    input: WebGLTexture,
+    output: WebGLTexture,
+    framebuffer: WebGLFramebuffer,
+    filters: ImageFilters,
+    width: number,
+    height: number
+  ): void {
+    if (!this.gl) return;
+    const gl = this.gl;
+
+    const program = this.getOrCreateProgram('chromaKey', this.chromaKeyShader());
+    if (!program) return;
+
+    gl.useProgram(program);
+
+    gl.bindFramebuffer(gl.FRAMEBUFFER, framebuffer);
+    gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, output, 0);
+    gl.viewport(0, 0, width, height);
+
+    const hex = filters.chromaKeyColor.replace('#', '');
+    const kr = parseInt(hex.slice(0, 2), 16) / 255;
+    const kg = parseInt(hex.slice(2, 4), 16) / 255;
+    const kb = parseInt(hex.slice(4, 6), 16) / 255;
+
+    gl.uniform3f(gl.getUniformLocation(program, 'u_keyColor'), kr, kg, kb);
+    gl.uniform1f(gl.getUniformLocation(program, 'u_similarity'), filters.chromaKeySimilarity / 100.0);
+    gl.uniform1f(gl.getUniformLocation(program, 'u_smoothness'), filters.chromaKeyEdgeSmoothness / 100.0);
+    gl.uniform1f(gl.getUniformLocation(program, 'u_spill'), filters.chromaKeySpillReduction / 100.0);
+
+    gl.activeTexture(gl.TEXTURE0);
+    gl.bindTexture(gl.TEXTURE_2D, input);
+    gl.uniform1i(gl.getUniformLocation(program, 'u_texture'), 0);
+
+    gl.drawArrays(gl.TRIANGLES, 0, 6);
+  }
+
+  private chromaKeyShader(): { vertex: string; fragment: string } {
+    const vertex = `#version 300 es
+      in vec2 a_position;
+      in vec2 a_texCoord;
+      out vec2 v_texCoord;
+
+      void main() {
+        gl_Position = vec4(a_position, 0.0, 1.0);
+        v_texCoord = a_texCoord;
+      }
+    `;
+
+    const fragment = `#version 300 es
+      precision highp float;
+
+      in vec2 v_texCoord;
+      out vec4 outColor;
+
+      uniform sampler2D u_texture;
+      uniform vec3 u_keyColor;
+      uniform float u_similarity;
+      uniform float u_smoothness;
+      uniform float u_spill;
+
+      vec3 rgbToYcbcr(vec3 rgb) {
+        float y  =  0.299 * rgb.r + 0.587 * rgb.g + 0.114 * rgb.b;
+        float cb = -0.168736 * rgb.r - 0.331264 * rgb.g + 0.5 * rgb.b + 0.5;
+        float cr =  0.5 * rgb.r - 0.418688 * rgb.g - 0.081312 * rgb.b + 0.5;
+        return vec3(y, cb, cr);
+      }
+
+      void main() {
+        vec4 color = texture(u_texture, v_texCoord);
+
+        vec3 ycbcrPixel = rgbToYcbcr(color.rgb);
+        vec3 ycbcrKey   = rgbToYcbcr(u_keyColor);
+
+        // Chroma distance uses only Cb/Cr — ignores luminance
+        float dcb = ycbcrPixel.y - ycbcrKey.y;
+        float dcr = ycbcrPixel.z - ycbcrKey.z;
+        float chromaDist = sqrt(dcb * dcb + dcr * dcr);
+
+        // Similarity defines the hard removal zone
+        // Smoothness defines the feather zone around the edge
+        float hardEdge = u_similarity * 0.5;
+        float softEdge = hardEdge + u_smoothness * 0.15;
+
+        float alpha = smoothstep(hardEdge, softEdge, chromaDist);
+
+        // Spill suppression: remove key color tint from semi-transparent pixels
+        if (u_spill > 0.0 && alpha < 1.0) {
+          float spillFactor = (1.0 - alpha) * u_spill;
+          vec3 keyYcbcr = ycbcrKey;
+          // Desaturate toward key chroma proportionally
+          float y = ycbcrPixel.x;
+          float cb = mix(ycbcrPixel.y, 0.5, spillFactor);
+          float cr = mix(ycbcrPixel.z, 0.5, spillFactor);
+          // Convert back to RGB
+          float r = y + 1.402 * (cr - 0.5);
+          float g = y - 0.344136 * (cb - 0.5) - 0.714136 * (cr - 0.5);
+          float b = y + 1.772 * (cb - 0.5);
+          color.rgb = clamp(vec3(r, g, b), 0.0, 1.0);
+        }
+
+        outColor = vec4(color.rgb, color.a * alpha);
+      }
+    `;
+
+    return { vertex, fragment };
   }
 
   private basicAdjustmentShader(): { vertex: string; fragment: string } {
@@ -676,6 +796,50 @@ export class WebGLFilterProcessor {
         if (filterString) {
           ctx.filter = filterString.trim();
           ctx.drawImage(img, 0, 0, width, height);
+        }
+
+        if (filters.chromaKeyEnabled) {
+          const hex = filters.chromaKeyColor.replace('#', '');
+          const kr = parseInt(hex.slice(0, 2), 16);
+          const kg = parseInt(hex.slice(2, 4), 16);
+          const kb = parseInt(hex.slice(4, 6), 16);
+
+          const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+          const data = imgData.data;
+          const similarity = filters.chromaKeySimilarity / 100;
+          const smoothness = filters.chromaKeyEdgeSmoothness / 100;
+          const spill = filters.chromaKeySpillReduction / 100;
+
+          for (let i = 0; i < data.length; i += 4) {
+            const r = data[i] / 255;
+            const g = data[i + 1] / 255;
+            const b = data[i + 2] / 255;
+
+            const py = 0.299 * r + 0.587 * g + 0.114 * b;
+            const pcb = -0.168736 * r - 0.331264 * g + 0.5 * b + 0.5;
+            const pcr = 0.5 * r - 0.418688 * g - 0.081312 * b + 0.5;
+
+            const ky = 0.299 * (kr / 255) + 0.587 * (kg / 255) + 0.114 * (kb / 255);
+            const kcb = -0.168736 * (kr / 255) - 0.331264 * (kg / 255) + 0.5 * (kb / 255) + 0.5;
+            const kcr = 0.5 * (kr / 255) - 0.418688 * (kg / 255) - 0.081312 * (kb / 255) + 0.5;
+
+            const dist = Math.sqrt((pcb - kcb) ** 2 + (pcr - kcr) ** 2);
+            const hard = similarity * 0.5;
+            const soft = hard + smoothness * 0.15;
+            const alpha = Math.min(1, Math.max(0, (dist - hard) / Math.max(0.0001, soft - hard)));
+
+            if (alpha < 1 && spill > 0) {
+              const spillFactor = (1 - alpha) * spill;
+              const newCb = pcb + (0.5 - pcb) * spillFactor;
+              const newCr = pcr + (0.5 - pcr) * spillFactor;
+              data[i]     = Math.round(Math.min(255, Math.max(0, (py + 1.402 * (newCr - 0.5)) * 255)));
+              data[i + 1] = Math.round(Math.min(255, Math.max(0, (py - 0.344136 * (newCb - 0.5) - 0.714136 * (newCr - 0.5)) * 255)));
+              data[i + 2] = Math.round(Math.min(255, Math.max(0, (py + 1.772 * (newCb - 0.5)) * 255)));
+            }
+
+            data[i + 3] = Math.round(data[i + 3] * alpha);
+          }
+          ctx.putImageData(imgData, 0, 0);
         }
 
         resolve(canvas.toDataURL('image/png'));

@@ -106,6 +106,13 @@ export const getDefaultImageFilters = (): ImageFilters => ({
   threshold: 128,
   halftone: 0,
   crystallize: 0,
+
+  // Chroma Key
+  chromaKeyEnabled: false,
+  chromaKeyColor: '#00ff00',
+  chromaKeySimilarity: 20,
+  chromaKeyEdgeSmoothness: 10,
+  chromaKeySpillReduction: 20,
 });
 
 export const hasActiveFilters = (filters?: ImageFilters): boolean => {
@@ -121,7 +128,7 @@ export const hasActiveFilters = (filters?: ImageFilters): boolean => {
 
 export const resetFilterCategory = (
   filters: ImageFilters,
-  category: 'basic' | 'hsl' | 'colorBalance' | 'levels' | 'rgb' | 'blur' | 'sharpen' | 'noise' | 'distortion' | 'lens' | 'stylize' | 'special' | 'all'
+  category: 'basic' | 'hsl' | 'colorBalance' | 'levels' | 'rgb' | 'blur' | 'sharpen' | 'noise' | 'distortion' | 'lens' | 'stylize' | 'special' | 'chromaKey' | 'all'
 ): ImageFilters => {
   const defaults = getDefaultImageFilters();
 
@@ -147,6 +154,7 @@ export const resetFilterCategory = (
       'edgeDetection', 'pixelate', 'mosaic'
     ],
     special: ['posterize', 'solarize', 'threshold', 'halftone', 'crystallize'],
+    chromaKey: ['chromaKeyEnabled', 'chromaKeyColor', 'chromaKeySimilarity', 'chromaKeyEdgeSmoothness', 'chromaKeySpillReduction'],
   };
 
   if (category === 'all') {

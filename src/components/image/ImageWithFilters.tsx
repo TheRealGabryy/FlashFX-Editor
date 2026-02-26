@@ -43,7 +43,8 @@ const ImageWithFilters: React.FC<ImageWithFiltersProps> = ({
       f.boxBlur > 0 ||
       f.surfaceBlur > 0 ||
       f.sharpen > 0 ||
-      f.clarity !== 0
+      f.clarity !== 0 ||
+      f.chromaKeyEnabled === true
     );
   };
 
