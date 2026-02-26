@@ -57,7 +57,10 @@ interface LayoutManagerProps {
   onOpenLineProperties: () => void;
   
   // Export
-  onOpenExport: () => void;
+  onExportDesign?: () => void;
+  onRenderSequence?: () => void;
+  onExportLayers?: () => void;
+  onDownloadProject?: () => void;
 
   // Project JSON Editor
   onOpenProjectJsonEditor: () => void;
@@ -138,7 +141,10 @@ const LayoutManager: React.FC<LayoutManagerProps> = (props) => {
     onUngroup: props.onUngroup,
     onOpenJsonEditor: props.onOpenJsonEditor,
     onOpenLineProperties: props.onOpenLineProperties,
-    onOpenExport: props.onOpenExport,
+    onExportDesign: props.onExportDesign,
+    onRenderSequence: props.onRenderSequence,
+    onExportLayers: props.onExportLayers,
+    onDownloadProject: props.onDownloadProject,
     onOpenProjectJsonEditor: props.onOpenProjectJsonEditor,
     onOpenEditorSettings: props.onOpenEditorSettings,
     editorMode: props.editorMode,

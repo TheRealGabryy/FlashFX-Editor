@@ -4,6 +4,7 @@ import { DesignElement } from '../../types/design';
 import { createShapeAtCenter, CanvasViewport } from '../../utils/canvasUtils';
 import { LayoutMode } from '../../hooks/useLayoutMode';
 import ImageImportMenu from '../image/ImageImportMenu';
+import ExportMenu from '../design-tool/ExportMenu';
 import GoogleImageSearchModal from '../image/GoogleImageSearchModal';
 import DalleGenerateModal from '../image/DalleGenerateModal';
 import { getDefaultImageFilters } from '../../utils/imageFilters';
@@ -18,7 +19,10 @@ interface HorizontalShapesBarProps {
   onOpenGridSettings: () => void;
   onOpenEditorSettings?: () => void;
   onOpenTutorial?: () => void;
-  onOpenExport?: () => void;
+  onExportDesign?: () => void;
+  onRenderSequence?: () => void;
+  onExportLayers?: () => void;
+  onDownloadProject?: () => void;
   gridEnabled: boolean;
   snapEnabled: boolean;
   onToggleGrid: () => void;
@@ -46,7 +50,10 @@ const HorizontalShapesBar: React.FC<HorizontalShapesBarProps> = ({
   onOpenGridSettings,
   onOpenEditorSettings,
   onOpenTutorial,
-  onOpenExport,
+  onExportDesign,
+  onRenderSequence,
+  onExportLayers,
+  onDownloadProject,
   gridEnabled,
   snapEnabled,
   onToggleGrid,
@@ -68,6 +75,8 @@ const HorizontalShapesBar: React.FC<HorizontalShapesBarProps> = ({
   const svgFileInputRef = useRef<HTMLInputElement>(null);
   const imageButtonRef = useRef<HTMLButtonElement>(null);
   const [showImageMenu, setShowImageMenu] = useState(false);
+  const exportButtonRef = useRef<HTMLButtonElement>(null);
+  const [showExportMenu, setShowExportMenu] = useState(false);
   const [showGoogleSearch, setShowGoogleSearch] = useState(false);
   const [showDalleGenerate, setShowDalleGenerate] = useState(false);
   const tools = [
@@ -527,15 +536,24 @@ const HorizontalShapesBar: React.FC<HorizontalShapesBarProps> = ({
           </button>
         )}
 
-        {onOpenExport && (
-          <button
-            onClick={onOpenExport}
-            className="w-8 h-8 rounded-md bg-gradient-to-r from-yellow-400 to-orange-500 hover:from-yellow-300 hover:to-orange-400 transition-all duration-200 hover:scale-105 flex items-center justify-center shadow-lg"
-            title="Export Design"
-          >
-            <Download className="w-4 h-4 text-gray-900" />
-          </button>
-        )}
+        <button
+          ref={exportButtonRef}
+          onClick={() => setShowExportMenu(!showExportMenu)}
+          className="w-8 h-8 rounded-md bg-gradient-to-r from-yellow-400 to-orange-500 hover:from-yellow-300 hover:to-orange-400 transition-all duration-200 hover:scale-105 flex items-center justify-center shadow-lg"
+          title="Export"
+        >
+          <Download className={`w-4 h-4 text-gray-900 transition-all duration-300 ${showExportMenu ? 'rotate-180' : 'rotate-0'}`} />
+        </button>
+
+        <ExportMenu
+          isOpen={showExportMenu}
+          onClose={() => setShowExportMenu(false)}
+          buttonRef={exportButtonRef}
+          onExportDesign={onExportDesign || (() => {})}
+          onRenderSequence={onRenderSequence || (() => {})}
+          onExportLayers={onExportLayers || (() => {})}
+          onDownloadProject={onDownloadProject || (() => {})}
+        />
 
         {onSaveCurrentProject && (
           <button

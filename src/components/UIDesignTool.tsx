@@ -1,5 +1,7 @@
-import React, { useState, useCallback } from 'react';
-import ExportUI from '../export/ExportUI';
+import React, { useState, useCallback, useRef } from 'react';
+import { ExportManager, ExportConfig } from '../export/ExportManager';
+import { MP4ExportPipeline, MP4ExportConfig, MP4ExportProgress } from '../export/MP4ExportPipeline';
+import RenderProgressModal from './modals/RenderProgressModal';
 import LayoutManager from './layout/LayoutManager';
 import LayoutModeSwitcher from './layout/LayoutModeSwitcher';
 import ShortCutPopUpModal from './design-tool/ShortCutPopUpModal';
@@ -37,53 +39,6 @@ interface UIDesignToolProps {
   projectId?: string | null;
 }
 
-interface ExportUIWrapperProps {
-  showExportPanel: boolean;
-  setShowExportPanel: (show: boolean) => void;
-  elements: DesignElement[];
-  selectedElements: string[];
-  projectName: string;
-  canvasSize: { width: number; height: number };
-  background?: BackgroundConfig;
-  projectCanvasSize: { width: number; height: number };
-  onSaveProject?: () => void;
-}
-
-const ExportUIWrapper: React.FC<ExportUIWrapperProps> = ({
-  showExportPanel,
-  setShowExportPanel,
-  elements,
-  selectedElements,
-  projectName,
-  canvasSize,
-  background,
-  projectCanvasSize,
-  onSaveProject
-}) => {
-  const { state, getActiveSequence } = useAnimation();
-  const activeSequence = getActiveSequence();
-
-  return (
-    <ExportUI
-      isOpen={showExportPanel}
-      onClose={() => setShowExportPanel(false)}
-      elements={elements}
-      selectedElements={selectedElements}
-      projectName={projectName}
-      canvasWidth={canvasSize.width}
-      canvasHeight={canvasSize.height}
-      background={background}
-      projectCanvasWidth={projectCanvasSize.width}
-      projectCanvasHeight={projectCanvasSize.height}
-      animationDuration={state.timeline.duration}
-      animationFps={state.timeline.fps}
-      animations={state.animations}
-      sequenceName={activeSequence?.name}
-      hasActiveSequence={!!activeSequence}
-      onSaveProject={onSaveProject}
-    />
-  );
-};
 
 interface UIDesignToolContentProps {
   onBackToMain: () => void;
@@ -94,7 +49,7 @@ interface UIDesignToolContentProps {
 }
 
 const UIDesignToolContent: React.FC<UIDesignToolContentProps> = ({ onBackToMain, editorMode, projectId, isGuest, user }) => {
-  const { updateKeyframesAtCurrentTime, state: animationState, deleteKeyframe, selectKeyframes, loadAnimations } = useAnimation();
+  const { updateKeyframesAtCurrentTime, state: animationState, deleteKeyframe, selectKeyframes, loadAnimations, getActiveSequence } = useAnimation();
 
   const initialState: CanvasState = {
     elements: [],
@@ -118,7 +73,19 @@ const UIDesignToolContent: React.FC<UIDesignToolContentProps> = ({ onBackToMain,
   const [pan, setPan] = useState({ x: 0, y: 0 });
   const [showGrid, setShowGrid] = useState(true);
   const [snapEnabled, setSnapEnabled] = useState(true);
-  const [showExportPanel, setShowExportPanel] = useState(false);
+  const [showRenderModal, setShowRenderModal] = useState(false);
+  const [renderBlob, setRenderBlob] = useState<Blob | null>(null);
+  const [mp4Progress, setMp4Progress] = useState<MP4ExportProgress>({
+    status: 'idle',
+    currentFrame: 0,
+    totalFrames: 0,
+    percentage: 0,
+    estimatedTimeRemaining: 0,
+    message: '',
+    startTime: null,
+  });
+  const mp4PipelineRef = useRef<MP4ExportPipeline | null>(null);
+  const [exportManager] = useState(() => new ExportManager());
   const [showShortcutsModal, setShowShortcutsModal] = useState(false);
   const [showJsonEditor, setShowJsonEditor] = useState(false);
   const [jsonEditorElement, setJsonEditorElement] = useState<DesignElement | null>(null);
@@ -540,8 +507,124 @@ const UIDesignToolContent: React.FC<UIDesignToolContentProps> = ({ onBackToMain,
     setSelectedElements(allIds);
   }, [currentState.elements, setSelectedElements]);
 
-  const handleExport = useCallback(() => {
-    setShowExportPanel(true);
+  const handleExportDesign = useCallback(async () => {
+    const config: ExportConfig = {
+      mode: 'canvas',
+      projectName: projectName || 'FlashFX_Project',
+      canvasWidth: canvasSize.width,
+      canvasHeight: canvasSize.height,
+      format: 'png',
+      quality: 0.95,
+    };
+    try {
+      await exportManager.exportCanvas(config, currentState.elements);
+    } catch (error) {
+      console.error('Export failed:', error);
+    }
+  }, [exportManager, projectName, canvasSize, currentState.elements]);
+
+  const handleExportLayers = useCallback(async () => {
+    const config: ExportConfig = {
+      mode: 'stacked',
+      projectName: projectName || 'FlashFX_Project',
+      canvasWidth: canvasSize.width,
+      canvasHeight: canvasSize.height,
+      format: 'png',
+      quality: 0.95,
+    };
+    try {
+      await exportManager.exportShapesStacked(config, currentState.elements);
+    } catch (error) {
+      console.error('Export layers failed:', error);
+    }
+  }, [exportManager, projectName, canvasSize, currentState.elements]);
+
+  const handleRenderSequence = useCallback(async () => {
+    const activeSequence = getActiveSequence();
+    if (!activeSequence) return;
+
+    setRenderBlob(null);
+    setShowRenderModal(true);
+    setMp4Progress({
+      status: 'loading',
+      currentFrame: 0,
+      totalFrames: Math.ceil(animationState.timeline.duration * animationState.timeline.fps),
+      percentage: 0,
+      estimatedTimeRemaining: 0,
+      message: 'Initializing...',
+      startTime: null,
+    });
+
+    const pipeline = new MP4ExportPipeline();
+    mp4PipelineRef.current = pipeline;
+
+    const mp4Config: MP4ExportConfig = {
+      fps: animationState.timeline.fps,
+      duration: animationState.timeline.duration,
+      width: canvasSize.width,
+      height: canvasSize.height,
+      projectName: projectName || 'FlashFX_Project',
+    };
+
+    try {
+      const blob = await pipeline.export(
+        mp4Config,
+        currentState.elements,
+        animationState.animations,
+        background,
+        (p) => setMp4Progress(p)
+      );
+      setRenderBlob(blob);
+      setMp4Progress(prev => ({
+        ...prev,
+        status: 'completed',
+        percentage: 100,
+        message: 'Export complete!',
+      }));
+    } catch (error) {
+      if ((error as Error).message !== 'Export cancelled') {
+        console.error('MP4 render failed:', error);
+      }
+      setMp4Progress(prev => ({
+        ...prev,
+        status: 'error',
+        message: error instanceof Error ? error.message : 'Render failed',
+      }));
+    } finally {
+      mp4PipelineRef.current = null;
+    }
+  }, [getActiveSequence, animationState, canvasSize, projectName, currentState.elements, background]);
+
+  const handleCancelRender = useCallback(() => {
+    mp4PipelineRef.current?.abort();
+    setMp4Progress(prev => ({
+      ...prev,
+      status: 'error',
+      message: 'Export cancelled by user',
+    }));
+  }, []);
+
+  const handleDownloadRender = useCallback(() => {
+    if (!renderBlob) return;
+    const activeSequence = getActiveSequence();
+    MP4ExportPipeline.downloadBlob(
+      renderBlob,
+      `${activeSequence?.name || projectName || 'animation'}.mp4`
+    );
+  }, [renderBlob, getActiveSequence, projectName]);
+
+  const handleCloseRenderModal = useCallback(() => {
+    setShowRenderModal(false);
+    setMp4Progress({
+      status: 'idle',
+      currentFrame: 0,
+      totalFrames: 0,
+      percentage: 0,
+      estimatedTimeRemaining: 0,
+      message: '',
+      startTime: null,
+    });
+    setRenderBlob(null);
   }, []);
 
   const handleDeselect = useCallback(() => {
@@ -967,7 +1050,7 @@ const UIDesignToolContent: React.FC<UIDesignToolContentProps> = ({ onBackToMain,
     onDelete: handleDelete,
     onNudge: handleNudge,
     onSelectAll: handleSelectAll,
-    onExport: handleExport,
+    onExport: handleExportDesign,
     onDeselect: handleDeselect,
     canUndo,
     canRedo
@@ -1019,7 +1102,10 @@ const UIDesignToolContent: React.FC<UIDesignToolContentProps> = ({ onBackToMain,
           onUngroup={handleUngroup}
           onManipulationStart={handleManipulationStart}
           onManipulationEnd={handleManipulationEnd}
-          onOpenExport={handleExport}
+          onExportDesign={handleExportDesign}
+          onRenderSequence={handleRenderSequence}
+          onExportLayers={handleExportLayers}
+          onDownloadProject={handleSaveClick}
           onOpenJsonEditor={handleOpenJsonEditor}
           onOpenLineProperties={handleOpenLineProperties}
           onOpenProjectJsonEditor={handleOpenProjectJsonEditor}
@@ -1056,16 +1142,25 @@ const UIDesignToolContent: React.FC<UIDesignToolContentProps> = ({ onBackToMain,
         onUpdateElement={updateElement}
       />
       
-      <ExportUIWrapper
-        showExportPanel={showExportPanel}
-        setShowExportPanel={setShowExportPanel}
-        elements={currentState.elements}
-        selectedElements={currentState.selectedElements}
-        projectName={projectName}
-        canvasSize={canvasSize}
-        background={background}
-        projectCanvasSize={projectCanvasSize}
-        onSaveProject={handleSaveClick}
+      <RenderProgressModal
+        isOpen={showRenderModal}
+        progress={{
+          status: mp4Progress.status === 'loading' ? 'preloading' :
+                  mp4Progress.status === 'capturing' ? 'rendering' :
+                  mp4Progress.status as 'idle' | 'preloading' | 'rendering' | 'encoding' | 'completed' | 'error',
+          currentFrame: mp4Progress.currentFrame,
+          totalFrames: mp4Progress.totalFrames,
+          percentage: mp4Progress.percentage,
+          estimatedTimeRemaining: mp4Progress.estimatedTimeRemaining,
+          message: mp4Progress.message,
+          startTime: mp4Progress.startTime,
+        }}
+        onCancel={handleCancelRender}
+        onClose={handleCloseRenderModal}
+        onDownload={handleDownloadRender}
+        renderBlob={renderBlob}
+        sequenceName={getActiveSequence()?.name || projectName}
+        sequenceDuration={animationState.timeline.duration}
       />
       
       <ShortCutPopUpModal

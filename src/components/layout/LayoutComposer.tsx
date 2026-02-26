@@ -44,8 +44,11 @@ interface LayoutComposerProps {
   onUngroup: () => void;
   
   // Export
-  onOpenExport: () => void;
-  
+  onExportDesign?: () => void;
+  onRenderSequence?: () => void;
+  onExportLayers?: () => void;
+  onDownloadProject?: () => void;
+
   // Editor mode
   editorMode?: boolean;
   onBackToMain?: () => void;
@@ -74,7 +77,6 @@ const LayoutComposer: React.FC<LayoutComposerProps> = ({
   onRedo,
   onGroup,
   onUngroup,
-  onOpenExport,
   editorMode = false,
   onBackToMain
 }) => {

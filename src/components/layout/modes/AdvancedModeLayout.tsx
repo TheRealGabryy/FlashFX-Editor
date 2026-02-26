@@ -59,7 +59,10 @@ interface AdvancedModeLayoutProps {
   onOpenJsonEditor: (element: DesignElement) => void;
   onOpenLineProperties: () => void;
   onOpenProjectJsonEditor: () => void;
-  onOpenExport: () => void;
+  onExportDesign?: () => void;
+  onRenderSequence?: () => void;
+  onExportLayers?: () => void;
+  onDownloadProject?: () => void;
   onOpenEditorSettings?: () => void;
   editorMode?: boolean;
   onBackToMain?: () => void;
@@ -118,7 +121,10 @@ const AdvancedModeLayout: React.FC<AdvancedModeLayoutProps> = ({
   onOpenJsonEditor,
   onOpenLineProperties,
   onOpenProjectJsonEditor,
-  onOpenExport,
+  onExportDesign,
+  onRenderSequence,
+  onExportLayers,
+  onDownloadProject,
   onOpenEditorSettings,
   editorMode = false,
   onBackToMain,
@@ -362,7 +368,10 @@ const AdvancedModeLayout: React.FC<AdvancedModeLayoutProps> = ({
               onOpenGridSettings={() => setShowGridSettings(true)}
               onOpenEditorSettings={onOpenEditorSettings}
               onOpenTutorial={showWelcomeModal}
-              onOpenExport={onOpenExport}
+              onExportDesign={onExportDesign}
+              onRenderSequence={onRenderSequence}
+              onExportLayers={onExportLayers}
+              onDownloadProject={onDownloadProject}
               gridEnabled={gridSettings.enabled}
               snapEnabled={gridSettings.snapEnabled}
               onToggleGrid={toggleGrid}

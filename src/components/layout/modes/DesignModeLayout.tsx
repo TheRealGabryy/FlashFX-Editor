@@ -75,7 +75,10 @@ interface DesignModeLayoutProps {
   onOpenProjectJsonEditor: () => void;
   
   // Export
-  onOpenExport: () => void;
+  onExportDesign?: () => void;
+  onRenderSequence?: () => void;
+  onExportLayers?: () => void;
+  onDownloadProject?: () => void;
 
   // Editor Settings
   onOpenEditorSettings?: () => void;
@@ -150,7 +153,10 @@ const DesignModeLayout: React.FC<DesignModeLayoutProps> = ({
   onOpenJsonEditor,
   onOpenLineProperties,
   onOpenProjectJsonEditor,
-  onOpenExport,
+  onExportDesign,
+  onRenderSequence,
+  onExportLayers,
+  onDownloadProject,
   onOpenEditorSettings,
   editorMode = false,
   onBackToMain,
@@ -465,7 +471,10 @@ const DesignModeLayout: React.FC<DesignModeLayoutProps> = ({
               onOpenGridSettings={() => setShowGridSettings(true)}
               onOpenEditorSettings={onOpenEditorSettings}
               onOpenTutorial={showWelcomeModal}
-              onOpenExport={onOpenExport}
+              onExportDesign={onExportDesign}
+              onRenderSequence={onRenderSequence}
+              onExportLayers={onExportLayers}
+              onDownloadProject={onDownloadProject}
               gridEnabled={gridSettings.enabled}
               snapEnabled={gridSettings.snapEnabled}
               onToggleGrid={toggleGrid}
